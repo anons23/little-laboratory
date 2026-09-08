@@ -1,0 +1,11 @@
+{
+  "name": "little-laboratory",
+  "version": "1.0.0",
+  "entry": "index.html",
+  "orientation": "portrait",
+  "description": "Idle-симулятор лаборатории с экспериментами, технологиями и учёными.",
+  "monetization": {
+    "rewarded": true,
+    "fullscreen": true
+  }
+}
