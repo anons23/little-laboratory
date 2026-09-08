@@ -1,0 +1,42 @@
+name: Final tuning
+
+on:
+  push:
+    branches: [main]
+
+permissions:
+  contents: write
+
+jobs:
+  tune:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Tune game
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          p=Path('index.html')
+          s=p.read_text(encoding='utf-8')
+          def rep(a,b):
+              global s
+              if a not in s: raise SystemExit('missing marker: '+a)
+              s=s.replace(a,b,1)
+          rep('<small id="levelProgress" class="muted"></small>', '<small id="levelProgress" class="muted"></small><small id="lifetimeStats" class="muted"></small>')
+          rep("if(Math.random()<0.025){", "if(Math.random()<(dt/60)*0.03){")
+          rep("document.getElementById('labLevel').textContent='Уровень '+s.labLevel+' · престиж '+s.prestige;", "document.getElementById('labLevel').textContent='Уровень '+s.labLevel+' · престиж '+s.prestige;const ls=document.getElementById('lifetimeStats');if(ls)ls.textContent='За всё время: '+(s.meta?.totalExperiments||0)+' экспериментов · '+(s.meta?.totalOrders||0)+' заказов · '+(s.meta?.resets||0)+' перезапусков · рекорд уровня '+(s.meta?.bestLevel||s.labLevel);")
+          p.write_text(s,encoding='utf-8')
+          PY
+      - name: Validate
+        run: |
+          grep -q "lifetimeStats" index.html
+          grep -q "dt/60" index.html
+          grep -q "little_laboratory_v18" index.html
+      - name: Commit
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add index.html
+          git commit -m 'fix: tune random events and show lifetime stats' || exit 0
+          git push
