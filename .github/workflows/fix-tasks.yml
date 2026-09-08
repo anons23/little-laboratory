@@ -1,0 +1,40 @@
+name: Fix task rerolls
+
+on:
+  push:
+    branches: [main]
+
+permissions:
+  contents: write
+
+jobs:
+  fix:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Fix task variants
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          import re
+          p=Path('index.html'); h=p.read_text(encoding='utf-8')
+          h=h.replace("['experiment','sell','produce','buy','discover','research','wheel']", "['exp5','exp10','exp20','sell10','sell20','sell50','prod50','prod100','prod250']")
+          start=h.find('function taskPool(){')
+          end=h.find('function claimTask', start)
+          if start<0 or end<0: raise SystemExit('task functions not found')
+          task_new="""function taskPool(){return [['exp5','🧪 Проведи 5 экспериментов',5,'🔬',40,'experiment'],['exp10','🧪 Проведи 10 экспериментов',10,'🔬',90,'experiment'],['exp20','🧪 Проведи 20 экспериментов',20,'🔬',180,'experiment'],['sell10','💰 Продай 10 материалов',10,'💰',60,'sell'],['sell20','💰 Продай 20 материалов',20,'💰',120,'sell'],['sell50','💰 Продай 50 материалов',50,'💰',300,'sell'],['prod50','🏭 Произведи 50 материалов',50,'🔬',40,'produce'],['prod100','🏭 Произведи 100 материалов',100,'🔬',80,'produce'],['prod250','🏭 Произведи 250 материалов',250,'🔬',200,'produce']]}function refreshTasks(ad){if(ad){if(s.tasks.refreshAds>=5)return toast('Рекламных обновлений заданий на сегодня больше нет');return rewarded(()=>{s.tasks.refreshAds++;rerollTasks()})}if(s.tasks.refreshFree<1)return toast('Бесплатных обновлений заданий на сегодня больше нет');s.tasks.refreshFree--;rerollTasks()}function rerollTasks(){const pool=taskPool().sort(()=>Math.random()-.5);s.tasks.active=pool.slice(0,3).map(x=>x[0]);s.tasks.experiment=0;s.tasks.sell=0;s.tasks.produce=0;s.tasks.claimed={};save()}function renderTasks(){const e=document.getElementById('tasksPanel'),pool=taskPool(),active=Array.isArray(s.tasks.active)&&s.tasks.active.length===3?s.tasks.active:['exp5','sell20','prod100'],defs=active.map(id=>pool.find(x=>x[0]===id)).filter(Boolean);e.innerHTML='<div class=\"section-head\"><span class=\"eyebrow\">ЗАДАНИЯ</span><h3>Лабораторные задания</h3><p>Обновляй задания: 3 раза бесплатно и ещё 5 раз за рекламу каждый день.</p></div><div class=\"panel\"><span>🔄</span><div><b>Обновить задания</b><small>Бесплатно: '+s.tasks.refreshFree+' / 3 · за рекламу: '+s.tasks.refreshAds+' / 5</small></div><button class=\"secondary\" data-refresh-free '+(s.tasks.refreshFree?'':'disabled')+'>🔄 Бесплатно</button><button class=\"secondary\" data-refresh-ad '+(s.tasks.refreshAds<5?'':'disabled')+'>🎬 Реклама</button></div>'+defs.map(d=>{const v=Math.min(d[2],Math.floor(s.tasks[d[5]]||0)),claimed=!!s.tasks.claimed[d[0]],ready=v>=d[2]&&!claimed;return '<div class=\"panel '+(claimed?'task-done':'')+'\"><span>'+d[3]+'</span><div><b>'+d[1]+'</b><small>'+v+' / '+d[2]+' · награда '+d[4]+' '+d[3]+'</small></div><button class=\"secondary\" data-claim=\"'+d[0]+'\" '+(ready?'':'disabled')+'>'+(claimed?'Получено':'Забрать')+'</button></div>'}).join('');e.querySelectorAll('[data-claim]').forEach(b=>b.onclick=()=>claimTask(b.dataset.claim));const rf=e.querySelector('[data-refresh-free]'),ra=e.querySelector('[data-refresh-ad]');if(rf)rf.onclick=()=>refreshTasks(false);if(ra)ra.onclick=()=>refreshTasks(true)}"""
+          h=h[:start]+task_new+h[end:]
+          start=h.find('function claimTask')
+          end=h.find('function renderEcho',start)
+          if start<0 or end<0: raise SystemExit('claim task boundary not found')
+          claim="""function claimTask(id){if(s.tasks.claimed[id])return;const pool=taskPool(),d=pool.find(x=>x[0]===id);if(!d)return;const v=Math.floor(s.tasks[d[5]]||0);if(v<d[2])return;s[d[3]==='💰'?'money':'research']+=d[4];s.tasks.claimed[id]=1;save()}"""
+          h=h[:start]+claim+h[end:]
+          p.write_text(h,encoding='utf-8')
+          PY
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add index.html
+          git diff --cached --check
+          git commit -m 'fix: make randomized task variants persistent' || exit 0
+          git push
