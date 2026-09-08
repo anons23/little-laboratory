@@ -1,2 +1,0 @@
-/* Ad bonus module. Loaded by index.html after the inline game script is initialized. */
-(()=>{const ready=()=>{if(!window.LLGame)return;const g=window.LLGame;g.adBonuses={warehouse:{hours:24,amount:10},discount:{minutes:30,pct:25},production:{minutes:30,multiplier:2},money:{amount:200},research:{amount:40}}};if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',ready,{once:true});else ready()})();
