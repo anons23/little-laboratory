@@ -1,0 +1,100 @@
+name: Little Laboratory CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    name: Validate game
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+
+      - name: Check required files
+        run: |
+          set -euo pipefail
+          test -f index.html
+          test -f style.css
+          test -f game.json
+          test -f README.md
+          test -f .github/workflows/ci.yml
+
+      - name: Validate game manifest
+        run: |
+          python3 - <<'PY'
+          import json
+          from pathlib import Path
+          data=json.loads(Path('game.json').read_text(encoding='utf-8'))
+          required={'name','version','entry','orientation'}
+          missing=required-data.keys()
+          if missing: raise SystemExit(f'Missing game.json fields: {sorted(missing)}')
+          if data['entry']!='index.html': raise SystemExit('game.json entry must be index.html')
+          print(f"Manifest OK: {data['name']} {data['version']}")
+          PY
+
+      - name: Validate HTML and Yandex SDK
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          import re
+          html=Path('index.html').read_text(encoding='utf-8')
+          checks=[
+            ('doctype','<!doctype html>' in html.lower()),
+            ('viewport','name="viewport"' in html.lower()),
+            ('style.css','href="style.css"' in html),
+            ('Yandex Games SDK','https://sdk.games.s3.yandex.net/sdk.js' in html),
+            ('YaGames.init','YaGames.init()' in html),
+          ]
+          failed=[name for name,ok in checks if not ok]
+          if failed: raise SystemExit('HTML checks failed: '+', '.join(failed))
+          external=re.findall(r'<script[^>]+src=["\']([^"\']+)["\']',html,re.I)
+          allowed='https://sdk.games.s3.yandex.net/sdk.js'
+          unexpected=[u for u in external if u!=allowed]
+          if unexpected: raise SystemExit('Unexpected external JavaScript source: '+', '.join(unexpected))
+          print('HTML and Yandex SDK checks OK')
+          PY
+
+      - name: Check JavaScript syntax
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          import re
+          html=Path('index.html').read_text(encoding='utf-8')
+          scripts=re.findall(r'<script(?:\s[^>]*)?>(.*?)</script>',html,re.I|re.S)
+          inline=[x for x in scripts if x.strip()]
+          if not inline: raise SystemExit('No inline JavaScript found')
+          Path('/tmp/game-inline.js').write_text('\n\n'.join(inline),encoding='utf-8')
+          print(f'Extracted {len(inline)} inline script block(s)')
+          PY
+          node --check /tmp/game-inline.js
+
+      - name: Check for accidental local-file URLs
+        run: |
+          if grep -RniE 'file://|javascript:' index.html style.css game.json README.md; then
+            echo 'Unsafe/local URL pattern found'
+            exit 1
+          fi
+
+      - name: Build distributable archive
+        run: |
+          set -euo pipefail
+          rm -rf dist
+          mkdir -p dist/little-laboratory
+          cp index.html style.css game.json README.md dist/little-laboratory/
+          (cd dist && zip -qr little-laboratory-yandex-games.zip little-laboratory)
+          test -s dist/little-laboratory-yandex-games.zip
+
+      - name: Upload game archive
+        uses: actions/upload-artifact@v4
+        with:
+          name: little-laboratory-yandex-games
+          path: dist/little-laboratory-yandex-games.zip
+          if-no-files-found: error
