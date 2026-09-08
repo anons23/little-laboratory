@@ -1,0 +1,70 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
+<meta name="theme-color" content="#111827">
+<title>Маленькая Лаборатория</title>
+<link rel="stylesheet" href="style.css">
+<script src="https://sdk.games.s3.yandex.net/sdk.js"></script>
+</head>
+<body>
+<div id="game">
+<header class="topbar"><div class="brand">🧪 <span>Маленькая Лаборатория</span></div><div class="top-actions"><button class="icon-btn" id="saveBtn">💾</button><button class="icon-btn" id="soundBtn">🔊</button></div></header>
+<main>
+<section id="home" class="screen active">
+<div class="hero-card"><div class="hero-icon">🧪</div><h1>Маленькая<br>Лаборатория</h1><p>Строй производство, открывай технологии и превращай научные открытия в прибыль.</p><button id="continueBtn" class="primary big">Продолжить</button><div class="mini-stats"><span>💰 <b id="homeMoney">0</b></span><span>🔬 <b id="homeResearch">0</b></span><span>🧬 <b id="homeDisc">1</b>/8</span></div></div>
+<div class="ad-card"><span>🎁</span><div><b>Научный бонус</b><small>Посмотри короткое видео и получи x2 дохода за офлайн.</small></div><button id="homeRewardBtn" class="secondary">Получить</button></div>
+</section>
+<section id="lab" class="screen">
+<div class="resource-row"><div class="resource"><span>💰</span><b id="money">0</b><small>деньги</small></div><div class="resource"><span>🔬</span><b id="research">0</b><small>наука</small></div><div class="resource"><span>⚡</span><b id="energy">0</b><small>энергия</small></div><div class="resource"><span>🔩</span><b id="metal">0</b><small>металл</small></div></div>
+<div class="lab-panel"><div class="lab-title"><div><span class="eyebrow">ЛАБОРАТОРИЯ</span><h2 id="labLevel">Уровень 1</h2></div><button id="prestigeBtn" class="small-btn">⭐ Престиж</button></div><div class="production-core"><div class="machine">⚙️</div><div class="production-info"><b>Автоматический цех</b><span id="prodText">Производит металл</span><div class="progress"><i id="prodProgress"></i></div><small id="prodRate">+1 металл / сек</small></div></div></div>
+<div class="tabs"><button class="tab active" data-tab="machines">⚙️ Машины</button><button class="tab" data-tab="recipes">🧪 Рецепты</button><button class="tab" data-tab="scientists">👨‍🔬 Учёные</button></div>
+<div id="machines" class="tab-content active"></div><div id="recipes" class="tab-content"></div><div id="scientists" class="tab-content"></div>
+<div class="bottom-actions"><button id="eventBtn" class="event-btn">🎲 Эксперимент</button><button id="rewardBtn" class="reward-btn">📺 x2 на 30 сек</button></div>
+</section>
+<section id="researchScreen" class="screen"><div class="section-head"><span class="eyebrow">ПРОГРЕСС</span><h2>Дерево технологий</h2></div><div id="techTree" class="tech-grid"></div></section>
+<section id="collection" class="screen"><div class="section-head"><span class="eyebrow">АРХИВ</span><h2>Коллекция открытий</h2></div><div id="collectionGrid" class="collection-grid"></div></section>
+</main>
+<nav class="nav"><button class="nav-item active" data-screen="home">🏠<span>Главная</span></button><button class="nav-item" data-screen="lab">⚙️<span>Лаборатория</span></button><button class="nav-item" data-screen="researchScreen">🔬<span>Технологии</span></button><button class="nav-item" data-screen="collection">🧬<span>Коллекция</span></button></nav>
+</div>
+<div id="toast" class="toast hidden"></div>
+<div id="modal" class="modal hidden"><div class="modal-card"><button id="modalClose" class="modal-close">×</button><div id="modalIcon" class="hero-icon">🧪</div><h2 id="modalTitle"></h2><p id="modalText"></p><div id="modalActions" class="modal-actions"></div></div></div>
+<script>
+(()=>{
+'use strict';
+const KEY='little_laboratory_v1'; let ysdk=null,player=null,timer=null,boostUntil=0,soundOn=true;
+const discoveries=[['metal','🔩','Металл','Первый промышленный материал',3],['gear','⚙️','Шестерня','Механическая точность',12],['crystal','💎','Кристалл','Редкая структура',35],['plasma','🟣','Плазма','Горячая материя',100],['dna','🧬','ДНК','Код жизни',180],['robot','🤖','Робот','Автоматизация',420],['portal','🌀','Портал','Новая физика',1200],['singularity','🌌','Сингулярность','Предел эксперимента',5000]];
+const recipes=[['metal','Металл','🔩',{},1,1],['gear','Шестерня','⚙️',{metal:3},1,1],['crystal','Кристалл','💎',{gear:3,research:8},1,1],['plasma','Плазма','🟣',{crystal:2,energy:20,research:20},1,2],['dna','ДНК','🧬',{crystal:3,research:40},1,2],['robot','Робот','🤖',{gear:8,plasma:2,research:80},1,3],['portal','Портал','🌀',{robot:2,plasma:5,research:160},1,4],['singularity','Сингулярность','🌌',{portal:2,dna:5,research:400},1,5]];
+const machines=[['smelter','Плавильня','🔥',25,1,'metal'],['assembler','Сборщик','⚙️',150,2,'gear'],['reactor','Реактор','⚛️',600,5,'crystal'],['quantum','Квантовый цех','🌀',2500,12,'plasma']];
+const scientists=[['chemist','Химик','🧑‍🔬',250,0.15],['engineer','Инженер','👩‍🔬',700,0.3],['genius','Гений','🧠',2000,0.6]];
+const techs=[['automation','🤖','Автоматизация',300,'Скорость производства +25%'],['chemistry','🧪','Продвинутая химия',600,'Рецепты дают +1 предмет'],['energy','⚡','Новая энергетика',1000,'Энергия восстанавливается быстрее'],['quantum','🌀','Квантовая физика',2500,'Шанс редкого открытия']];
+const base={version:1,money:80,research:0,energy:70,metal:0,gear:0,crystal:0,plasma:0,dna:0,robot:0,portal:0,singularity:0,labLevel:1,prestige:0,discoveries:['metal'],machines:{smelter:0,assembler:0,reactor:0,quantum:0},scientists:{chemist:0,engineer:0,genius:0},tech:{automation:0,chemistry:0,energy:0,quantum:0},lastSave:Date.now(),lastOffline:Date.now()};
+let s=clone(base);
+function clone(x){return JSON.parse(JSON.stringify(x))} function n(x){return Math.floor(x||0)} function fmt(x){x=n(x);return x<1000?String(x):x<1e6?(x/1000).toFixed(1)+'K':(x/1e6).toFixed(1)+'M'}
+function toast(t){const e=document.getElementById('toast');e.textContent=t;e.classList.remove('hidden');clearTimeout(toast.t);toast.t=setTimeout(()=>e.classList.add('hidden'),2200)}
+function save(){s.lastSave=Date.now();s.lastOffline=s.lastSave;localStorage.setItem(KEY,JSON.stringify(s));if(player)player.setData(s,true).catch(()=>{});render()}
+async function load(){let local=null;try{local=JSON.parse(localStorage.getItem(KEY)||'null')}catch{};if(local)s=Object.assign(clone(base),local);try{if(!ysdk)ysdk=await YaGames.init();player=await ysdk.getPlayer({scopes:false});const cloud=await player.getData();if(cloud&&cloud.version)s=Object.assign(s,cloud)}catch{};const sec=Math.min(8*3600,Math.max(0,(Date.now()-(s.lastOffline||Date.now()))/1000));if(sec>30){const gain=sec*productionRate()*0.35;s.money+=gain;s.research+=sec*0.02;toast('Офлайн-доход: +'+fmt(gain)+' 💰')}s.lastOffline=Date.now();save()}
+function productionRate(){let r=1;for(const m of machines){const q=s.machines[m[0]];if(q)r+=q*m[4]};r*=1+s.tech.automation*.25;r*=1+s.scientists.chemist*.15+s.scientists.engineer*.3+s.scientists.genius*.6;if(boostUntil>Date.now())r*=2;return r}
+function spend(cost){for(const k in cost)if((s[k]||0)<cost[k])return false;for(const k in cost)s[k]-=cost[k];return true}
+function unlockDiscovery(id){if(s.discoveries.includes(id))return;s.discoveries.push(id);toast('Новое открытие: '+discoveries.find(x=>x[0]===id)[2]);render()}
+function buyMachine(id){const m=machines.find(x=>x[0]===id),q=s.machines[id];const cost=Math.floor(m[3]*Math.pow(1.65,q));if(s.money<cost)return toast('Не хватает денег');s.money-=cost;s.machines[id]++;toast(m[1]+' улучшена');save()}
+function buyScientist(id){const x=scientists.find(v=>v[0]===id),q=s.scientists[id];const cost=Math.floor(x[3]*Math.pow(1.9,q));if(s.money<cost)return toast('Не хватает денег');s.money-=cost;s.scientists[id]++;save()}
+function craft(r){if(!spend(r[3]))return toast('Не хватает ресурсов');s[r[0]]+=r[4]+s.tech.chemistry;unlockDiscovery(r[0]);s.money+=r[4]*r[5]*3;save()}
+function buyTech(id){const t=techs.find(x=>x[0]===id);if(s.tech[id])return;if(s.research<t[3])return toast('Не хватает науки');s.research-=t[3];s.tech[id]=1;save();toast('Технология изучена')}
+function prestige(){if(s.labLevel<5)return toast('Нужен 5 уровень лаборатории');const gain=Math.max(1,Math.floor(s.money/10000));s.prestige+=gain;s.money=80;s.research=0;s.energy=70;s.labLevel=1;s.machines={smelter:0,assembler:0,reactor:0,quantum:0};toast('Престиж +'+gain);save()}
+function event(){const r=Math.random();if(r<.34){s.money+=250+s.prestige*30;toast('Удачный эксперимент: +250 💰')}else if(r<.67){s.research+=100;toast('Новая формула: +100 🔬')}else{s.energy=Math.min(100,s.energy+35);toast('Энергетический всплеск: +35 ⚡')}save()}
+function adReward(){if(!ysdk||!ysdk.adv)return boostUntil=Date.now()+30000,toast('Бонус x2 активирован');ysdk.adv.showRewardedVideo({callbacks:{onRewarded:()=>{boostUntil=Date.now()+30000;toast('Бонус x2 на 30 секунд!');render()},onClose:()=>{}}}).catch(()=>toast('Реклама сейчас недоступна'))}
+function offlineAd(){if(!ysdk||!ysdk.adv)return toast('Рекламный бонус доступен после запуска на Яндекс Играх');ysdk.adv.showRewardedVideo({callbacks:{onRewarded:()=>{const g=Math.max(100,s.money*.25);s.money+=g;save();toast('Награда: +'+fmt(g)+' 💰')}}}).catch(()=>toast('Реклама сейчас недоступна'))}
+function screen(id){document.querySelectorAll('.screen').forEach(e=>e.classList.toggle('active',e.id===id));document.querySelectorAll('.nav-item').forEach(e=>e.classList.toggle('active',e.dataset.screen===id));if(id==='lab')renderLab()}
+function card(icon,title,desc,button,disabled=false){return `<div class="card"><div class="item-icon">${icon}</div><div class="item-main"><b>${title}</b><small>${desc}</small></div>${button?`<button class="buy" ${disabled?'disabled':''} data-action="${button.action}" data-id="${button.id||''}">${button.text}</button>`:''}</div>`}
+function renderLab(){document.getElementById('machines').innerHTML=machines.map(m=>{const q=s.machines[m[0]],c=Math.floor(m[3]*Math.pow(1.65,q));return card(m[2],m[1],'Уровень '+q+' • +'+m[4]+' / сек',{action:'machine',id:m[0],text:fmt(c)+' 💰'})}).join('');document.getElementById('recipes').innerHTML=recipes.map(r=>card(r[2],r[1],'Производство: '+r[0],{action:'recipe',id:r[0],text:'Создать'})).join('');document.getElementById('scientists').innerHTML=scientists.map(x=>{const q=s.scientists[x[0]],c=Math.floor(x[3]*Math.pow(1.9,q));return card(x[2],x[1],'Бонус '+Math.round(x[4]*100)+'% • уровень '+q,{action:'scientist',id:x[0],text:fmt(c)+' 💰'})}).join('')}
+function render(){document.getElementById('money').textContent=fmt(s.money);document.getElementById('research').textContent=fmt(s.research);document.getElementById('energy').textContent=n(s.energy);document.getElementById('metal').textContent=fmt(s.metal);document.getElementById('homeMoney').textContent=fmt(s.money);document.getElementById('homeResearch').textContent=fmt(s.research);document.getElementById('homeDisc').textContent=s.discoveries.length;document.getElementById('labLevel').textContent='Уровень '+s.labLevel;document.getElementById('prodRate').textContent='+'+productionRate().toFixed(1)+' металл / сек';document.getElementById('prodProgress').style.width=(Date.now()%1000)/10+'%';renderLab();document.getElementById('techTree').innerHTML=techs.map(t=>`<div class="tech-card"><div class="tech-icon">${t[1]}</div><b>${t[2]}</b><small>${t[4]}</small><div class="tech-level">${s.tech[t[0]]?'ИЗУЧЕНО':'Цена '+t[3]+' 🔬'}</div><button class="buy" data-action="tech" data-id="${t[0]}" ${s.tech[t[0]]?'disabled':''}>${s.tech[t[0]]?'✓ Готово':'Изучить'}</button></div>`).join('');document.getElementById('collectionGrid').innerHTML=discoveries.map(d=>{const yes=s.discoveries.includes(d[0]);return `<div class="collection-item ${yes?'':'unknown'}"><span>${yes?d[1]:'❔'}</span><b>${yes?d[2]:'Неизвестно'}</b><small>${yes?d[3]:'Продолжайте эксперименты'}</small></div>`}).join('')}
+function tick(){const dt=.25,r=productionRate();s.metal+=r*dt;s.money+=r*dt*.8;s.research+=dt*(.15+s.prestige*.02);s.energy=Math.min(100,s.energy+dt*(.3+s.tech.energy*.2));if(s.metal>=10&&s.labLevel<5)s.labLevel=Math.min(5,1+Math.floor(Math.log10(s.money+1)));render()}
+document.addEventListener('click',e=>{const nav=e.target.closest('.nav-item');if(nav)return screen(nav.dataset.screen);const tab=e.target.closest('.tab');if(tab){document.querySelectorAll('.tab').forEach(x=>x.classList.remove('active'));document.querySelectorAll('.tab-content').forEach(x=>x.classList.remove('active'));tab.classList.add('active');document.getElementById(tab.dataset.tab).classList.add('active');return}const b=e.target.closest('[data-action]');if(b){const id=b.dataset.id;if(b.dataset.action==='machine')buyMachine(id);if(b.dataset.action==='scientist')buyScientist(id);if(b.dataset.action==='recipe'){const r=recipes.find(x=>x[0]===id);craft(r)}if(b.dataset.action==='tech')buyTech(id)}});
+document.getElementById('continueBtn').onclick=()=>screen('lab');document.getElementById('eventBtn').onclick=event;document.getElementById('rewardBtn').onclick=adReward;document.getElementById('homeRewardBtn').onclick=offlineAd;document.getElementById('saveBtn').onclick=()=>{save();toast('Сохранено')};document.getElementById('soundBtn').onclick=()=>{soundOn=!soundOn;document.getElementById('soundBtn').textContent=soundOn?'🔊':'🔇'};document.getElementById('prestigeBtn').onclick=prestige;document.getElementById('modalClose').onclick=()=>document.getElementById('modal').classList.add('hidden');
+load();timer=setInterval(tick,250);setInterval(save,15000);
+})();
+</script>
+</body>
+</html>
