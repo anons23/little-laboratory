@@ -1,6 +1,8 @@
 name: UX Fix
 on:
-  workflow_dispatch:
+  push:
+    paths:
+      - '.github/workflows/ux-fix.yml'
 permissions:
   contents: write
 jobs:
@@ -26,12 +28,8 @@ jobs:
           new='<p>Ты получил маленькую биолабораторию. Твоя задача — развивать её, открывать новые реакции и постепенно собрать Проект Эхо.</p><button id="continueBtn" class="primary big">В лабораторию</button>'
           assert old in s
           s=s.replace(old,new,1)
-          old='function clone(x){return JSON.parse(JSON.stringify(x))}'
-          new="function clone(x){return JSON.parse(JSON.stringify(x))}"
-          assert old in s
-          # Add onboarding state to base.
-          old="version:18,money:120"
-          new="version:18,introSeen:false,money:120"
+          old='version:18,money:120'
+          new='version:18,introSeen:false,money:120'
           assert old in s
           s=s.replace(old,new,1)
           old="for(const k of ['money','research','energy','capacity','labLevel','prestige','lastSave','lastOffline','adWarehouseUntil','adDiscountUntil','adProductionUntil'])if(k in x)z[k]=Math.max(0,num(x[k]));"
@@ -42,20 +40,19 @@ jobs:
           new="function renderOnboarding(){const e=document.getElementById('onboarding'),step=document.getElementById('onboardingStep'),btn=document.getElementById('onboardingNext');if(!e||!step||!btn)return;if(s.introSeen){e.classList.add('hidden');return}e.classList.remove('hidden');const n=Number(e.dataset.step||'0');if(n===0){step.innerHTML='<div class=\"eyebrow\">ДОБРО ПОЖАЛОВАТЬ</div><h2>Твоя лаборатория начинается с нуля</h2><p>Ты унаследовал небольшую биолабораторию. Здесь нет готовых рецептов: материалы нужно получать, сочетать и изучать.</p><div class=\"guide\"><div>🧫 <b>1. Получай материалы</b><br><span class=\"muted\">Инкубатор автоматически производит образцы.</span></div><div>🧪 <b>2. Экспериментируй</b><br><span class=\"muted\">На столе выбирай 2 компонента и проверяй их сочетание.</span></div><div>🔬 <b>3. Развивайся</b><br><span class=\"muted\">Продавай лишнее, покупай нужное, открывай технологии и новые аппараты.</span></div></div><p><b>Первая цель:</b> проведи первый эксперимент.</p>' ;btn.textContent='Понятно, начать';}else if(n===1){step.innerHTML='<div class=\"eyebrow\">ПЕРВЫЕ ШАГИ</div><h2>Не нужно изучать всё сразу</h2><p>В начале тебе достаточно трёх экранов:</p><div class=\"guide\"><div>⚗️ <b>Лаборатория</b> — материалы, экспериментальный стол и аппараты.</div><div>🏪 <b>Рынок</b> — продавай излишки и покупай недостающие компоненты.</div><div>🔬 <b>Тех</b> — задания, заказы, технологии и случайные ситуации.</div></div><p class=\"muted\">Остальные разделы открывай по мере развития.</p>';btn.textContent='В лабораторию';}else{step.innerHTML='<div class=\"eyebrow\">ПЕРВАЯ ЦЕЛЬ</div><h2>Начни с простого эксперимента</h2><p>Открой «Лаборатория» → «Стол», выбери два доступных компонента и нажми «Провести эксперимент».</p><div class=\"guide\"><div>💡 Не бойся неудач: неизвестные сочетания — часть игры.</div><div>📖 Удачные реакции попадают в Архив и открывают путь к новым компонентам.</div></div>';btn.textContent='Начать исследование';}btn.onclick=()=>{if(n<2){e.dataset.step=String(n+1);return}s.introSeen=true;e.classList.add('hidden');save();setScreen('lab')}}function render(){renderTop();const goal=s.labLevel<2?'Проведи эксперименты и набери 100 науки.'"
           assert old in s
           s=s.replace(old,new,1)
-          old="renderAdBonuses();renderWarehouse();"
-          new="renderOnboarding();renderAdBonuses();renderWarehouse();"
+          old='renderAdBonuses();renderWarehouse();'
+          new='renderOnboarding();renderAdBonuses();renderWarehouse();'
           assert old in s
           s=s.replace(old,new,1)
-          # Wheel: 9 useful visual segments + exactly 1 empty segment; one empty outcome at 5%.
-          old="background:conic-gradient(#7c5cff 0 36deg,#293552 36deg 72deg,#4b8dff 72deg 108deg,#293552 108deg 144deg,#7c5cff 144deg 180deg,#293552 180deg 216deg,#4b8dff 216deg 252deg,#293552 252deg 288deg,#7c5cff 288deg 324deg,#293552 324deg 360deg)"
-          new="background:conic-gradient(#7c5cff 0 36deg,#4b8dff 36deg 72deg,#7c5cff 72deg 108deg,#4b8dff 108deg 144deg,#7c5cff 144deg 180deg,#4b8dff 180deg 216deg,#7c5cff 216deg 252deg,#4b8dff 252deg 288deg,#7c5cff 288deg 324deg,#293552 324deg 360deg)"
+          old='background:conic-gradient(#7c5cff 0 36deg,#293552 36deg 72deg,#4b8dff 72deg 108deg,#293552 108deg 144deg,#7c5cff 144deg 180deg,#293552 180deg 216deg,#4b8dff 216deg 252deg,#293552 252deg 288deg,#7c5cff 288deg 324deg,#293552 324deg 360deg)'
+          new='background:conic-gradient(#7c5cff 0 36deg,#4b8dff 36deg 72deg,#7c5cff 72deg 108deg,#4b8dff 108deg 144deg,#7c5cff 144deg 180deg,#4b8dff 180deg 216deg,#7c5cff 216deg 252deg,#4b8dff 252deg 288deg,#7c5cff 288deg 324deg,#293552 324deg 360deg)'
           assert old in s
           s=s.replace(old,new,1)
           old="const pool=[['sample',45],['blood',25],['reagent',15],['dna',8],['bioenergy',4],['serum',2],['crystal',.8],['gel',.15],['matrix',.04],['stableHeart',.001]];"
           new="const pool=[['sample',43],['blood',23],['reagent',14],['dna',8],['bioenergy',4],['serum',2.5],['crystal',.8],['gel',.15],['matrix',.05],['stableHeart',.001],['nothing',4.499]];"
           assert old in s
           s=s.replace(old,new,1)
-          old="function doSpinResult(k,ad){if(addResource(k,1)<1){"
+          old='function doSpinResult(k,ad){if(addResource(k,1)<1){'
           new="function doSpinResult(k,ad){if(k==='nothing'){toast('🎡 В этот раз — пустой сектор. Повезёт в следующий раз!');save();return}if(addResource(k,1)<1){"
           assert old in s
           s=s.replace(old,new,1)
@@ -67,8 +64,6 @@ jobs:
           grep -q "\['nothing',4.499\]" index.html
           grep -q 'introSeen' index.html
       - name: Commit
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           git config user.name github-actions[bot]
           git config user.email 41898282+github-actions[bot]@users.noreply.github.com
