@@ -1,0 +1,95 @@
+name: Apply v1.6 gameplay fixes
+
+on:
+  push:
+    branches: [main]
+
+permissions:
+  contents: write
+
+jobs:
+  modify:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Apply gameplay and UX fixes
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          import re, json
+          p=Path('index.html')
+          h=p.read_text(encoding='utf-8')
+          old=h
+          def sub(pattern,repl):
+              global h
+              h,n=re.subn(pattern,repl,h,count=1,flags=re.S)
+              if n!=1: raise SystemExit(f'pattern not found: {pattern[:100]}')
+          h=h.replace("<div id=\"adBonusPanel\"></div><div class=\"panel\"><span>🎯</span>","<div id=\"adBonusPanel\"></div><div id=\"fortuneHomePanel\"></div><div class=\"panel\"><span>🎯</span>")
+          h=h.replace('<button class="nav-item" data-screen="fortuneScreen">🎡<span>Удача</span></button>','')
+          h=h.replace(".wheel{font-size:64px;margin:8px auto}.wheel-reward", ".wheel-wrap{position:relative;width:190px;height:190px;margin:12px auto}.wheel{width:180px;height:180px;margin:5px;border-radius:50%;display:grid;place-items:center;font-size:44px;border:6px solid #34405f;background:conic-gradient(#7c5cff 0 36deg,#293552 36deg 72deg,#4b8dff 72deg 108deg,#293552 108deg 144deg,#7c5cff 144deg 180deg,#293552 180deg 216deg,#4b8dff 216deg 252deg,#293552 252deg 288deg,#7c5cff 288deg 324deg,#293552 324deg 360deg);box-shadow:0 12px 30px #0007;transform:rotate(0deg)}.wheel.spinning{animation:wheelSpin 2.3s cubic-bezier(.15,.75,.2,1)}@keyframes wheelSpin{0%{transform:rotate(0)}100%{transform:rotate(1440deg)}}.wheel-pointer{position:absolute;top:-3px;left:50%;transform:translateX(-50%);font-size:25px;z-index:2}.wheel-prizes{display:grid;grid-template-columns:1fr 1fr;gap:5px;margin:10px 0}.wheel-prize{padding:7px;border-radius:10px;background:#151e35;font-size:11px}.wheel-result{padding:10px;border-radius:12px;background:#151e35;border:1px solid #34405f;margin:8px 0}.wheel-result.winner{border-color:#9b8aff}.wheel-reward")
+          h=h.replace("const KEY='little_laboratory_v16',OLD_KEYS=['little_laboratory_v15','little_laboratory_v14','little_laboratory_v13','little_laboratory_v12'];", "const KEY='little_laboratory_v17',OLD_KEYS=['little_laboratory_v16','little_laboratory_v15','little_laboratory_v14','little_laboratory_v13','little_laboratory_v12'];")
+          h=h.replace("lastSave:0,lastOffline:Date.now(),exp:{}", "lastSave:0,lastOffline:Date.now(),exp:{}")
+          h=h.replace("const sellPrices={sample:4,", "const sellPrices={sample:.5,")
+          h=h.replace("regen:480,matrix:1000,mdna:1200,heart:1800,adaptedHeart:3000,stableHeart:5000,echoCore:10000", "regen:1000000,matrix:1000000,mdna:1000000,heart:1800,adaptedHeart:3000,stableHeart:1000000,echoCore:10000")
+          h=h.replace("tech:{precision:0,analysis:0,adaptation:0,safety:0,triple:0,echo:0},fortuneDay:'',fortuneFree:3,fortuneAds:0,tasks:{experiment:0,sell:0,produce:0,claimed:{}},", "tech:{precision:0,analysis:0,adaptation:0,safety:0,triple:0,echo:0},fortuneDay:'',fortuneFree:3,fortuneAds:0,tasks:{experiment:0,sell:0,produce:0,claimed:{},active:['experiment','sell','produce'],refreshDay:'',refreshFree:3,refreshAds:0},")
+          # Ensure new task state survives old saves and resets daily.
+          old_norm="if(x.tasks&&typeof x.tasks==='object'){z.tasks.experiment=Math.max(0,num(x.tasks.experiment));z.tasks.sell=Math.max(0,num(x.tasks.sell));z.tasks.produce=Math.max(0,num(x.tasks.produce));z.tasks.claimed=x.tasks.claimed&&typeof x.tasks.claimed==='object'?x.tasks.claimed:{}}"
+          new_norm="if(x.tasks&&typeof x.tasks==='object'){z.tasks.experiment=Math.max(0,num(x.tasks.experiment));z.tasks.sell=Math.max(0,num(x.tasks.sell));z.tasks.produce=Math.max(0,num(x.tasks.produce));z.tasks.claimed=x.tasks.claimed&&typeof x.tasks.claimed==='object'?x.tasks.claimed:{};z.tasks.active=Array.isArray(x.tasks.active)?x.tasks.active.filter(v=>['experiment','sell','produce','buy','discover','research','wheel'].includes(v)):z.tasks.active;z.tasks.refreshDay=x.tasks.refreshDay||'';z.tasks.refreshFree=Math.max(0,Math.min(3,Math.floor(num(x.tasks.refreshFree))));z.tasks.refreshAds=Math.max(0,Math.min(5,Math.floor(num(x.tasks.refreshAds))))}"
+          if old_norm not in h: raise SystemExit('task normalize anchor missing')
+          h=h.replace(old_norm,new_norm)
+          anchor="if(z.adDay!==today()){z.adDay=today();z.adCounts=clone(base.adCounts)}z.capacity="
+          repl="if(z.adDay!==today()){z.adDay=today();z.adCounts=clone(base.adCounts)}if(z.tasks.refreshDay!==today()){z.tasks.refreshDay=today();z.tasks.refreshFree=3;z.tasks.refreshAds=0;if(!Array.isArray(z.tasks.active)||z.tasks.active.length!==3)z.tasks.active=['experiment','sell','produce'];z.tasks.experiment=0;z.tasks.sell=0;z.tasks.produce=0;z.tasks.claimed={}}z.capacity="
+          if anchor not in h: raise SystemExit('daily task anchor missing')
+          h=h.replace(anchor,repl)
+          # Persist selected experiment components after attempts and replace oldest when full.
+          old_wh="if(s[k]<1)return toast('Нет этого материала');if(selected.includes(k))selected=selected.filter(x=>x!==k);else if(selected.length<(s.tech.triple?3:2))selected.push(k);else toast(s.tech.triple?'Можно выбрать максимум 3 компонента.':'Сначала открой трёхкомпонентный стол.');renderWarehouse();renderExperiment()"
+          new_wh="if(s[k]<1)return toast('Нет этого материала');if(selected.includes(k))selected=selected.filter(x=>x!==k);else if(selected.length<(s.tech.triple?3:2))selected.push(k);else selected=[...selected.slice(1),k];renderWarehouse();renderExperiment()"
+          if old_wh not in h: raise SystemExit('warehouse selection anchor missing')
+          h=h.replace(old_wh,new_wh)
+          h=h.replace("else toast('❌ Реакция не удалась');selected=[];updateLevel();save()", "else toast('❌ Реакция не удалась');updateLevel();save()")
+          # Move warehouse expansion into warehouse and shop discount into buy tab.
+          sub(r"function renderWarehouse\(\)\{.*?\}\s*function experimentChance", """function renderWarehouse(){const e=document.getElementById('warehouse'),active=adActive('warehouse'),left=adLimit('warehouse')-s.adCounts.warehouse;e.innerHTML='<div class=\\\"notice\\\">Склад: '+used()+' / '+warehouseCapacity()+' ячеек'+(active?' · 🎬 +10 на 24 часа':'')+' · выбери 2 компонента'+(s.tech.triple?' или до 3 компонентов.':' на столе.')+'</div><div class=\\\"ad-bonus\\\"><b>📦 Расширение склада</b><small>+10 ячеек на 24 часа. Сегодня осталось: '+Math.max(0,left)+'</small><button class=\\\"secondary\\\" data-ad-bonus=\\\"warehouse\\\" '+(active||left<=0?'disabled':'')+'>🎬 Получить</button></div><div class=\\\"warehouse-grid\\\">'+s.discovered.map(k=>'<button class=\\\"resource-card '+(selected.includes(k)?'selected':'')+'\\\" data-pick=\\\"'+k+'\\\"><span>'+icon(k)+'</span><b>'+label(k)+'</b><strong>× '+fmt(s[k])+'</strong></button>').join('')+'</div>';e.querySelectorAll('[data-pick]').forEach(b=>b.onclick=()=>{const k=b.dataset.pick;if(s[k]<1)return toast('Нет этого материала');if(selected.includes(k))selected=selected.filter(x=>x!==k);else if(selected.length<(s.tech.triple?3:2))selected.push(k);else selected=[...selected.slice(1),k];renderWarehouse();renderExperiment()});const ad=e.querySelector('[data-ad-bonus=\\\"warehouse\\\"]');if(ad)ad.onclick=()=>claimAdBonus('warehouse')}function experimentChance""")
+          # Clearer discount calculation and inline shop bonus.
+          h=h.replace("return Math.max(1,Math.floor(buyPrices[k]*(Date.now()<s.adDiscountUntil?.75:1)))", "return Math.max(1,Math.floor(buyPrices[k]*(Date.now()<num(s.adDiscountUntil)?0.75:1)))")
+          sub(r"function renderMarket\(\)\{.*?\}\s*function marketAction", """function renderMarket(){const prices=marketMode==='sell'?sellPrices:buyPrices,e=document.getElementById('marketList');let bonus=marketMode==='buy'?'<div class=\\\"ad-bonus\\\"><b>🏪 Скидка магазина</b><small>−25% на покупки на 30 минут. Сегодня осталось: '+Math.max(0,adLimit('discount')-s.adCounts.discount)+(Date.now()<s.adDiscountUntil?' · активно':'')+'</small><button class=\\\"secondary\\\" data-market-ad=\\\"discount\\\" '+(adActive('discount')||s.adCounts.discount>=adLimit('discount')?'disabled':'')+'>🎬 Получить скидку</button></div>':'';e.innerHTML='<div class=\\\"notice\\\">'+(marketMode==='sell'?'Продажа излишков.':'Покупка недостающих материалов.')+(Date.now()<s.adDiscountUntil?' 🎬 Скидка 25% действует на покупки.':'')+'</div>'+bonus+Object.keys(prices).map(k=>{const price=marketMode==='sell'?prices[k]:buyPrice(k);return '<div class=\\\"panel\\\"><span>'+icon(k)+'</span><div><b>'+label(k)+'</b><small>'+fmt(s[k])+' шт. · '+price+' 💰 / шт.</small></div><div class=\\\"bulk\\\"><input type=\\\"number\\\" min=\\\"1\\\" max=\\\"'+(marketMode==='sell'?Math.max(1,Math.floor(s[k])):9999)+'\\\" value=\\\"1\\\" data-q=\\\"'+k+'\\\"><button class=\\\"secondary\\\" data-market-action=\\\"'+k+'\\\">'+(marketMode==='sell'?'Продать':'Купить')+'</button></div></div>'}).join('');e.querySelectorAll('[data-market-action]').forEach(b=>b.onclick=()=>marketAction(b.dataset.marketAction));const ad=e.querySelector('[data-market-ad=\\\"discount\\\"]');if(ad)ad.onclick=()=>claimAdBonus('discount')}function marketAction""")
+          # Home only gets general bonuses + fortune; warehouse/discount are contextual.
+          sub(r"function renderAdBonuses\(\)\{.*?\}\s*function claimAdBonus", """function renderAdBonuses(){const e=document.getElementById('adBonusPanel'),show=['production','money','research'];e.innerHTML='<div class=\\\"notice\\\">🎬 Реклама используется только для полезных добровольных бонусов. Энергия в рекламе не выдаётся — для полного восстановления есть магазин.</div><div class=\\\"ad-bonus-grid\\\">'+show.map(k=>{const d=adDefs[k],active=adActive(k),left=adLimit(k)-s.adCounts[k];return '<div class=\\\"ad-bonus\\\"><b>'+d[0]+' '+d[1]+'</b><small>'+d[2]+(active?' · активно':'')+'<br>Сегодня осталось: '+Math.max(0,left)+'</small><button class=\\\"secondary\\\" data-ad-bonus=\\\"'+k+'\\\" '+(active||left<=0?'disabled':'')+'>🎬 Получить</button></div>'}).join('')+'</div>';e.querySelectorAll('[data-ad-bonus]').forEach(b=>b.onclick=()=>claimAdBonus(b.dataset.adBonus))}function claimAdBonus""")
+          # Fortune with animation, explicit prize list, clear result, and home placement.
+          h=h.replace("function renderFortune(){document.getElementById('fortunePanel').innerHTML=", "function renderFortune(){const target=document.getElementById('fortuneHomePanel')||document.getElementById('fortunePanel');if(!target)return;target.innerHTML=")
+          old_spin="async function spinWheel(ad){if(!ad&&s.fortuneFree<1)return toast('Бесплатных вращений на сегодня больше нет');if(ad&&s.fortuneAds>=10)return toast('Лимит рекламных вращений достигнут');if(ad)return rewarded(()=>doSpin(true));doSpin(false)}function doSpin(ad){if(ad)s.fortuneAds++;else s.fortuneFree--;const k=weightedWheel();if(addResource(k,1)<1){if(ad)s.fortuneAds--;else s.fortuneFree++;return toast('Нет места на складе')}discover(k);document.getElementById('wheelReward').textContent='🎉 '+icon(k)+' '+label(k);save()}"
+          new_spin="let wheelBusy=false;async function spinWheel(ad){if(wheelBusy)return toast('Колесо уже вращается');if(!ad&&s.fortuneFree<1)return toast('Бесплатных вращений на сегодня больше нет');if(ad&&s.fortuneAds>=10)return toast('Лимит рекламных вращений достигнут');if(ad)return rewarded(()=>startWheelSpin(true));startWheelSpin(false)}function startWheelSpin(ad){if(wheelBusy)return;wheelBusy=true;if(ad)s.fortuneAds++;else s.fortuneFree--;const k=weightedWheel(),visual=document.getElementById('wheelVisual');if(!visual){wheelBusy=false;return doSpinResult(k,ad)}visual.classList.remove('spinning');void visual.offsetWidth;visual.classList.add('spinning');setTimeout(()=>{visual.classList.remove('spinning');doSpinResult(k,ad);wheelBusy=false},2300)}function doSpinResult(k,ad){if(addResource(k,1)<1){if(ad)s.fortuneAds--;else s.fortuneFree++;return toast('Нет места на складе')}discover(k);const e=document.getElementById('wheelReward');if(e){e.textContent='🎉 Выигрыш: '+icon(k)+' '+label(k);e.classList.add('winner')}save()}"
+          if old_spin not in h: raise SystemExit('fortune spin anchor missing')
+          h=h.replace(old_spin,new_spin)
+          # Replace fortune renderer's simple markup with animated wheel + prize table.
+          old_start="target.innerHTML='<div class=\"wheel-card\"><div class=\"wheel\">🎡</div><div class=\"wheel-reward\" id=\"wheelReward\">Крути колесо</div><p>Бесплатных вращений сегодня: <b>'+s.fortuneFree+'</b> / 3<br>Рекламных вращений использовано: <b>'+s.fortuneAds+'</b> / 10</p><button id=\"freeSpin\" class=\"primary\" '+(s.fortuneFree?'':'disabled')+'>Бесплатное вращение</button><button id=\"adSpin\" class=\"secondary\">🎬 Вращение за рекламу</button></div><div class=\"notice\">Обычные материалы выпадают часто, редкие — очень редко. Финальные компоненты проекта не выдаются бесплатно.</div>';freeSpin.onclick=()=>spinWheel(false);adSpin.onclick=()=>spinWheel(true)}"
+          new_start="target.innerHTML='<div class=\"wheel-card\"><h3>🎡 Колесо фортуны</h3><div class=\"wheel-wrap\"><div class=\"wheel-pointer\">▼</div><div class=\"wheel\" id=\"wheelVisual\">🎡</div></div><div class=\"wheel-result\"><div class=\"wheel-reward\" id=\"wheelReward\">Пока ничего не выиграно</div></div><div class=\"wheel-prizes\"><div class=\"wheel-prize\">🧫 Клеточная культура</div><div class=\"wheel-prize\">🩸 Кровь</div><div class=\"wheel-prize\">🧪 Реагент</div><div class=\"wheel-prize\">🧬 ДНК</div><div class=\"wheel-prize\">⚡ Биоэнергия</div><div class=\"wheel-prize\">💉 Сыворотка</div><div class=\"wheel-prize\">💎 Кристалл</div><div class=\"wheel-prize\">🫧 Нейрогель</div><div class=\"wheel-prize\">🧠 Нейроматрица</div><div class=\"wheel-prize\">❤️ Стаб. сердце</div></div><p>Бесплатных вращений сегодня: <b>'+s.fortuneFree+'</b> / 3<br>Рекламных вращений: <b>'+s.fortuneAds+'</b> / 10</p><button id=\"freeSpin\" class=\"primary\" '+(s.fortuneFree?'':'disabled')+'>Бесплатное вращение</button><button id=\"adSpin\" class=\"secondary\" '+(s.fortuneAds>=10?'disabled':'')+'>🎬 Вращение за рекламу</button></div><div class=\"notice\">Частые призы: 🧫 🩸 🧪. Редкие: 💎 🧠 ❤️. Финальные компоненты проекта бесплатно не выдаются.</div>';document.getElementById('freeSpin').onclick=()=>spinWheel(false);document.getElementById('adSpin').onclick=()=>spinWheel(true)}"
+          if old_start not in h: raise SystemExit('fortune markup anchor missing')
+          h=h.replace(old_start,new_start)
+          # Add task rerolls: 3 free + 5 rewarded ads/day.
+          task_fn="function renderTasks(){"
+          idx=h.find(task_fn)
+          if idx<0: raise SystemExit('renderTasks missing')
+          end=h.find("function claimTask",idx)
+          if end<0: raise SystemExit('claimTask missing')
+          task_new="""function taskPool(){return [['experiment','🧪 Проведи 5 экспериментов',5,'🔬',40],['sell','💰 Продай 20 материалов',20,'💰',120],['produce','🏭 Произведи 100 материалов',100,'🔬',80],['buy','🛒 Купи 5 материалов',5,'💰',80],['discover','📖 Открой 2 новых материала',2,'🔬',100],['research','🔬 Получи 150 науки',150,'🔬',120],['wheel','🎡 Сделай 2 вращения',2,'💰',100]]}function refreshTasks(ad){if(ad){if(s.tasks.refreshAds>=5)return toast('Рекламных обновлений заданий на сегодня больше нет');return rewarded(()=>{s.tasks.refreshAds++;rerollTasks()})}if(s.tasks.refreshFree<1)return toast('Бесплатных обновлений заданий на сегодня больше нет');s.tasks.refreshFree--;rerollTasks()}function rerollTasks(){const pool=taskPool().sort(()=>Math.random()-.5);s.tasks.active=pool.slice(0,3).map(x=>x[0]);s.tasks.experiment=0;s.tasks.sell=0;s.tasks.produce=0;s.tasks.claimed={};save()}function renderTasks(){const e=document.getElementById('tasksPanel'),pool=taskPool(),active=Array.isArray(s.tasks.active)&&s.tasks.active.length===3?s.tasks.active:['experiment','sell','produce'],defs=active.map(id=>pool.find(x=>x[0]===id)).filter(Boolean);e.innerHTML='<div class=\"section-head\"><span class=\"eyebrow\">ЗАДАНИЯ</span><h3>Лабораторные задания</h3><p>Обновляй задания: 3 раза бесплатно и ещё 5 раз за рекламу каждый день.</p></div><div class=\"panel\"><span>🔄</span><div><b>Обновить задания</b><small>Бесплатно: '+s.tasks.refreshFree+' / 3 · за рекламу: '+s.tasks.refreshAds+' / 5</small></div><button class=\"secondary\" data-refresh-free '+(s.tasks.refreshFree?'':'disabled')+'>🔄 Бесплатно</button><button class=\"secondary\" data-refresh-ad '+(s.tasks.refreshAds<5?'':'disabled')+'>🎬 Реклама</button></div>'+defs.map(d=>{let raw=s.tasks[d[0]]||0;const v=Math.min(d[2],Math.floor(raw)),claimed=!!s.tasks.claimed[d[0]],ready=v>=d[2]&&!claimed;return '<div class=\"panel '+(claimed?'task-done':'')+'\"><span>'+d[3]+'</span><div><b>'+d[1]+'</b><small>'+v+' / '+d[2]+' · награда '+d[4]+' '+d[3]+'</small></div><button class=\"secondary\" data-claim=\"'+d[0]+'\" '+(ready?'':'disabled')+'>'+(claimed?'Получено':'Забрать')+'</button></div>'}).join('');e.querySelectorAll('[data-claim]').forEach(b=>b.onclick=()=>claimTask(b.dataset.claim));const rf=e.querySelector('[data-refresh-free]'),ra=e.querySelector('[data-refresh-ad]');if(rf)rf.onclick=()=>refreshTasks(false);if(ra)ra.onclick=()=>refreshTasks(true)}"""
+          h=h[:idx]+task_new+h[end:]
+          # General task claim only supports legacy three task types; prevent crashes for newly displayed tasks.
+          h=h.replace("const rewards={experiment:[40,'research'],sell:[120,'money'],produce:[80,'research']},r=rewards[id];if(!r)return;", "const rewards={experiment:[40,'research'],sell:[120,'money'],produce:[80,'research'],buy:[80,'money'],discover:[100,'research'],research:[120,'research'],wheel:[100,'money']},r=rewards[id];if(!r)return;")
+          # Remove the old fortune screen from render side-effects by rendering into Home; keep section harmless.
+          # Ensure task/fortune contextual render is still called.
+          if h==old: raise SystemExit('no changes made')
+          p.write_text(h,encoding='utf-8')
+          # update manifest version
+          g=Path('game.json'); data=json.loads(g.read_text(encoding='utf-8')); data['version']='1.6.0'; g.write_text(json.dumps(data,ensure_ascii=False,indent=2)+'\n',encoding='utf-8')
+          print('Applied v1.6 changes')
+          PY
+      - name: Commit changes
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add index.html game.json
+          git diff --cached --check
+          git diff --cached --quiet && exit 0
+          git commit -m 'feat: rebalance economy and improve experiments, fortune and tasks'
+          git push
