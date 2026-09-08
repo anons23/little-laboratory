@@ -1,6 +1,6 @@
 {
   "name": "little-laboratory",
-  "version": "1.5.0",
+  "version": "1.6.0",
   "entry": "index.html",
   "orientation": "portrait",
   "description": "Idle-симулятор биолаборатории с экспериментами, биологическими протоколами, неизвестными реакциями и проектом Эхо.",
