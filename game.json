@@ -1,9 +1,9 @@
 {
   "name": "little-laboratory",
-  "version": "1.1.0",
+  "version": "1.2.0",
   "entry": "index.html",
   "orientation": "portrait",
-  "description": "Idle-симулятор лаборатории с экспериментами, неизвестными реакциями, рынком и проектом создания жизни.",
+  "description": "Idle-симулятор биолаборатории с выбором компонентов, рискованными реакциями, повторными подсказками и проектом Эхо.",
   "monetization": {
     "rewarded": true,
     "fullscreen": true
