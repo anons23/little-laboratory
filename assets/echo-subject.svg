@@ -1,0 +1,32 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 700" preserveAspectRatio="xMidYMid slice">
+<defs>
+ <linearGradient id="bg" x2="0" y2="1"><stop stop-color="#07141a"/><stop offset=".55" stop-color="#0b2027"/><stop offset="1" stop-color="#02070b"/></linearGradient>
+ <radialGradient id="halo"><stop stop-color="#72f1df" stop-opacity=".38"/><stop offset="1" stop-color="#72f1df" stop-opacity="0"/></radialGradient>
+ <linearGradient id="glass" x2="1"><stop stop-color="#8cefe5" stop-opacity=".08"/><stop offset=".5" stop-color="#d9ffff" stop-opacity=".18"/><stop offset="1" stop-color="#6ce9dd" stop-opacity=".05"/></linearGradient>
+ <linearGradient id="body" x2="0" y2="1"><stop stop-color="#8a9baa"/><stop offset=".42" stop-color="#4f6370"/><stop offset="1" stop-color="#1b2a32"/></linearGradient>
+ <filter id="glow"><feGaussianBlur stdDeviation="18"/></filter>
+</defs>
+<rect width="900" height="700" fill="url(#bg)"/>
+<g opacity=".35" stroke="#6edfd5" fill="none"><path d="M95 75v550M180 40v610M720 40v610M805 75v550"/><rect x="120" y="35" width="660" height="625" rx="34"/></g>
+<ellipse cx="450" cy="330" rx="245" ry="300" fill="url(#halo)" filter="url(#glow)"/>
+<rect x="255" y="42" width="390" height="616" rx="195" fill="url(#glass)" stroke="#75e6dc" stroke-opacity=".65" stroke-width="4"/>
+<rect x="275" y="62" width="350" height="576" rx="175" fill="#08151c" fill-opacity=".5" stroke="#b8fff6" stroke-opacity=".13"/>
+<!-- head -->
+<ellipse cx="450" cy="160" rx="58" ry="68" fill="url(#body)" stroke="#a5b8c1" stroke-opacity=".65" stroke-width="3"/>
+<path d="M420 164q30 18 60 0" fill="none" stroke="#c8d7dc" stroke-opacity=".35" stroke-width="3"/>
+<!-- neck and torso -->
+<path d="M420 215v38l-68 42q-30 18-38 62l-26 138h75l28-105 18 180h82l18-180 28 105h75l-26-138q-8-44-38-62l-68-42v-38z" fill="url(#body)" stroke="#a5b8c1" stroke-opacity=".65" stroke-width="3"/>
+<!-- arms -->
+<path d="M352 296q-42 25-65 78l-48 104q-9 20 10 30t32-10l65-90 35-66z" fill="url(#body)" stroke="#a5b8c1" stroke-opacity=".55" stroke-width="3"/>
+<path d="M548 296q42 25 65 78l48 104q9 20-10 30t-32-10l-65-90-35-66z" fill="url(#body)" stroke="#a5b8c1" stroke-opacity=".55" stroke-width="3"/>
+<!-- legs -->
+<path d="M381 430l-8 205h60l17-164h0l17 164h60l-8-205z" fill="url(#body)" stroke="#a5b8c1" stroke-opacity=".6" stroke-width="3"/>
+<!-- restraints -->
+<g stroke="#9ff4ea" stroke-opacity=".55" stroke-width="5" fill="none"><path d="M270 315h90M540 315h90M315 455h65M520 455h65"/></g>
+<g fill="#8ff4e9" opacity=".65"><circle cx="285" cy="315" r="7"/><circle cx="615" cy="315" r="7"/><circle cx="335" cy="455" r="7"/><circle cx="565" cy="455" r="7"/></g>
+<!-- cables -->
+<g fill="none" stroke="#53c9c1" stroke-opacity=".55" stroke-width="3"><path d="M285 315C210 250 205 150 255 105"/><path d="M615 315C690 250 695 150 645 105"/><path d="M335 455C245 510 240 590 285 640"/><path d="M565 455C655 510 660 590 615 640"/></g>
+<!-- glass reflections -->
+<path d="M310 75l70 0-90 500-35 0zM590 75l35 0-70 500-35 0z" fill="#d8ffff" opacity=".035"/>
+<g fill="#8cefe5" opacity=".4" font-family="monospace" font-size="15"><text x="145" y="92">ECHO // CONTAINMENT</text><text x="670" y="92">SUBJECT 01</text><text x="145" y="615">VITALS: ACTIVE</text><text x="670" y="615">LOCK: SEALED</text></g>
+</svg>
