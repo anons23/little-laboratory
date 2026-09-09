@@ -51,7 +51,7 @@ jobs:
           checks=[
             ('doctype','<!doctype html>' in html.lower()),
             ('viewport','name="viewport"' in html.lower()),
-            ('style.css','href="style.css"' in html),
+            ('style.css',bool(re.search(r'href="style\\.css(?:\\?[^" ]*)?"',html))),
             ('Yandex Games SDK','https://sdk.games.s3.yandex.net/sdk.js' in html),
             ('YaGames.init','YaGames.init()' in html),
           ]
@@ -94,7 +94,7 @@ jobs:
           rm -rf dist
           mkdir -p dist/little-laboratory/assets
           cp index.html style.css game.json README.md dist/little-laboratory/
-          cp assets/*.svg dist/little-laboratory/assets/
+          cp assets/* dist/little-laboratory/assets/
           (cd dist && zip -qr little-laboratory-yandex-games.zip little-laboratory)
           test -s dist/little-laboratory-yandex-games.zip
 
