@@ -1,0 +1,1 @@
+Temporary recovery marker. The repository tree will be restored from the last known good commit.
