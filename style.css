@@ -87,3 +87,14 @@ button:disabled{opacity:.4;cursor:not-allowed}
 .echo-art:before,.echo-art:after,.creature-tank:before,.creature-tank:after{display:none!important;content:none!important}
 .echo-caption{text-align:center;color:#8aabc0;font-size:12px;margin-top:4px;background:rgba(4,14,20,.45);padding:8px;border-radius:10px}
 @media(max-width:420px){.nav-item{font-size:16px}.nav-item span{font-size:7px}.echo-art,.creature-tank{height:300px}.ad-bonus-grid{grid-template-columns:1fr}}
+
+/* Mobile fixes: keep market controls inside the phone viewport and stack them. */
+@media(max-width:600px){
+  .bulk{display:flex!important;flex-direction:column!important;align-items:stretch!important;gap:7px!important;width:100%!important}
+  .bulk input{display:block!important;flex:0 0 auto!important;width:100%!important;min-width:0!important;max-width:none!important}
+  .bulk button{display:block!important;flex:0 0 auto!important;width:100%!important;max-width:none!important;white-space:normal!important}
+  .echo-art,.creature-tank{height:min(55vh,420px)!important;min-height:220px!important;max-height:420px!important;background-size:contain!important;background-position:center center!important;background-repeat:no-repeat!important}
+}
+@media(min-width:601px){
+  .echo-art,.creature-tank{max-height:520px!important;background-size:contain!important;background-position:center center!important;background-repeat:no-repeat!important}
+}
