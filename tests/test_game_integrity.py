@@ -41,3 +41,10 @@ def test_random_events_are_not_too_rare_and_have_first_event_path():
 
 def test_no_eval_was_added_for_guided_navigation():
     assert "eval(" not in HTML
+
+
+if __name__ == "__main__":
+    tests = [v for n, v in globals().items() if n.startswith("test_")]
+    for test in tests:
+        test()
+    print(f"Game integrity tests OK: {len(tests)}")
