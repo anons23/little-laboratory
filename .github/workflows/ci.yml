@@ -27,6 +27,7 @@ jobs:
           test -f game.json
           test -f README.md
           test -f .github/workflows/ci.yml
+          test -d assets
 
       - name: Validate game manifest
         run: |
@@ -91,8 +92,9 @@ jobs:
         run: |
           set -euo pipefail
           rm -rf dist
-          mkdir -p dist/little-laboratory
+          mkdir -p dist/little-laboratory/assets
           cp index.html style.css game.json README.md dist/little-laboratory/
+          cp assets/*.svg dist/little-laboratory/assets/
           (cd dist && zip -qr little-laboratory-yandex-games.zip little-laboratory)
           test -s dist/little-laboratory-yandex-games.zip
 
