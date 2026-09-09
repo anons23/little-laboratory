@@ -77,9 +77,12 @@ jobs:
           PY
           node --check /tmp/game-inline.js
 
+      - name: Run game integrity tests
+        run: python3 tests/test_game_integrity.py
+
       - name: Check for accidental local-file URLs
         run: |
-          if grep -RniE 'file://|javascript:' index.html style.css game.json README.md; then
+          if grep -RniE 'file://|javascript:' index.html style.css game.json README.md tests; then
             echo 'Unsafe/local URL pattern found'
             exit 1
           fi
