@@ -14,7 +14,9 @@ def test_required_onboarding_and_guidance_are_present():
 
 
 def test_wheel_has_exactly_ten_percent_empty_sector():
-    m = re.search(r"function weightedWheel\(\)\{const pool=\[(.*?)\];", HTML)
+    m = re.search(r"function wheelPool\(\)\{return\[(.*?)\];?\}", HTML)
+    if not m:
+        m = re.search(r"function weightedWheel\(\)\{const pool=\[(.*?)\];", HTML)
     assert m, "wheel pool not found"
     weights = [float(x) for x in re.findall(r"\['[^']+',([0-9.]+)\]", m.group(1))]
     assert len(weights) == 11, weights
