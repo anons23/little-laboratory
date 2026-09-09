@@ -36,3 +36,5 @@ SDK подключён только с официального адреса Yan
 ## CI
 
 `.github/workflows/ci.yml` проверяет структуру проекта, manifest, HTML/SDK, синтаксис JavaScript, локальные URL и собирает ZIP-артефакт.
+
+<!-- CI trigger: verify current main build -->
