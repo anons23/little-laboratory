@@ -1,1 +1,35 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 1000"><defs><linearGradient id="b" x2="0" y2="1"><stop stop-color="#153b4e"/><stop offset="1" stop-color="#07151e"/></linearGradient></defs><rect width="800" height="1000" fill="url(#b)"/><g stroke="#78e8df" stroke-opacity=".28" fill="#183746"><rect x="55" y="240" width="210" height="500" rx="18"/><rect x="535" y="210" width="210" height="530" rx="18"/></g><g stroke="#86eee6" stroke-opacity=".45"><path d="M85 330h150M85 410h150M565 310h150M565 390h150"/><circle cx="400" cy="510" r="150" fill="#0d2a35"/></g><g fill="#65e1d7" opacity=".5"><circle cx="130" cy="290" r="16"/><circle cx="205" cy="290" r="10"/><circle cx="600" cy="270" r="14"/><circle cx="680" cy="270" r="10"/></g><text x="45" y="90" fill="#b8fff9" font-family="sans-serif" font-size="26" font-weight="700">ЛАБОРАТОРИЯ</text><text x="45" y="122" fill="#8bd8d3" font-family="sans-serif" font-size="14">Оборудование • исследования • развитие технологий</text></svg>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 1000">
+<defs>
+  <linearGradient id="sky" x2="0" y2="1">
+    <stop stop-color="#1a4a5c"/>
+    <stop offset=".45" stop-color="#0d2a38"/>
+    <stop offset="1" stop-color="#061018"/>
+  </linearGradient>
+  <radialGradient id="glow" cx="50%" cy="40%" r="50%">
+    <stop stop-color="#3dfff0" stop-opacity=".18"/>
+    <stop offset="1" stop-color="#000" stop-opacity="0"/>
+  </radialGradient>
+  <linearGradient id="tank" x2="0" y2="1">
+    <stop stop-color="#2a6b78" stop-opacity=".55"/>
+    <stop offset="1" stop-color="#0e3038" stop-opacity=".7"/>
+  </linearGradient>
+</defs>
+<rect width="800" height="1000" fill="url(#sky)"/>
+<rect width="800" height="1000" fill="url(#glow)"/>
+<rect x="40" y="200" width="200" height="520" rx="22" fill="url(#tank)" stroke="#7af0e6" stroke-opacity=".45" stroke-width="2"/>
+<rect x="560" y="180" width="200" height="540" rx="22" fill="url(#tank)" stroke="#7af0e6" stroke-opacity=".45" stroke-width="2"/>
+<g stroke="#9bfff6" stroke-opacity=".35" stroke-width="2">
+  <path d="M70 300h140M70 380h140M70 460h140M70 540h140"/>
+  <path d="M590 280h140M590 360h140M590 440h140M590 520h140"/>
+</g>
+<g fill="#6ef0e4" opacity=".65">
+  <circle cx="110" cy="270" r="14"/><circle cx="170" cy="270" r="10"/>
+  <circle cx="630" cy="250" r="14"/><circle cx="690" cy="250" r="10"/>
+  <circle cx="130" cy="350" r="8"/><circle cx="650" cy="330" r="9"/>
+</g>
+<circle cx="400" cy="480" r="160" fill="#0a2832" stroke="#5eeadf" stroke-opacity=".4" stroke-width="3"/>
+<circle cx="400" cy="480" r="110" fill="#123844" stroke="#7af0e6" stroke-opacity=".25" stroke-width="2"/>
+<circle cx="400" cy="470" r="36" fill="#4dffef" opacity=".25"/>
+<ellipse cx="400" cy="900" rx="280" ry="40" fill="#3dfff0" opacity=".08"/>
+<text x="50" y="80" fill="#b8fff9" font-family="system-ui,sans-serif" font-size="22" font-weight="700" opacity=".55">LABORATORY MODULE</text>
+</svg>

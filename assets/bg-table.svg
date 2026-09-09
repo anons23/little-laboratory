@@ -1,1 +1,18 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 1000"><defs><linearGradient id="b" x2="0" y2="1"><stop stop-color="#17394a"/><stop offset=".55" stop-color="#102735"/><stop offset="1" stop-color="#07141d"/></linearGradient></defs><rect width="800" height="1000" fill="url(#b)"/><path d="M70 650L730 650 670 920 130 920Z" fill="#1b3542" stroke="#74e7de" stroke-opacity=".4" stroke-width="4"/><path d="M115 690h570M155 750h490" stroke="#7be6df" opacity=".25" stroke-width="3"/><g fill="#244958" stroke="#7be6df" stroke-opacity=".5"><circle cx="175" cy="560" r="54"/><circle cx="400" cy="535" r="60"/><circle cx="625" cy="555" r="54"/><rect x="80" y="250" width="120" height="210" rx="15"/><rect x="600" y="250" width="120" height="210" rx="15"/></g><g fill="#7deee4" opacity=".55"><circle cx="175" cy="560" r="17"/><circle cx="400" cy="535" r="20"/><circle cx="625" cy="555" r="17"/></g><text x="45" y="90" fill="#b8fff9" font-family="sans-serif" font-size="26" font-weight="700">СТОЛ ЭКСПЕРИМЕНТОВ</text><text x="45" y="122" fill="#8bd8d3" font-family="sans-serif" font-size="14">Материалы • образцы • реакционные протоколы</text></svg>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 1000">
+<defs>
+  <linearGradient id="bg" x2="0" y2="1">
+    <stop stop-color="#1e3550"/>
+    <stop offset="1" stop-color="#0a1524"/>
+  </linearGradient>
+</defs>
+<rect width="800" height="1000" fill="url(#bg)"/>
+<rect x="80" y="420" width="640" height="28" rx="6" fill="#3a5a7a" opacity=".5"/>
+<rect x="100" y="448" width="600" height="220" rx="12" fill="#152838" stroke="#5a8ab0" stroke-opacity=".35"/>
+<g fill="#7ec8ff" opacity=".4">
+  <rect x="160" y="380" width="50" height="40" rx="6"/>
+  <rect x="260" y="360" width="40" height="60" rx="8"/>
+  <rect x="500" y="370" width="55" height="50" rx="6"/>
+  <circle cx="400" cy="390" r="28"/>
+</g>
+<text x="50" y="80" fill="#c5e0ff" font-family="system-ui,sans-serif" font-size="22" font-weight="700" opacity=".5">WORKBENCH</text>
+</svg>

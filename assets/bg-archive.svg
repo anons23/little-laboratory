@@ -1,1 +1,24 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 1000"><defs><linearGradient id="b" x2="0" y2="1"><stop stop-color="#3d3326"/><stop offset=".55" stop-color="#211b17"/><stop offset="1" stop-color="#0d0e10"/></linearGradient></defs><rect width="800" height="1000" fill="url(#b)"/><rect x="70" y="210" width="660" height="530" rx="18" fill="#171719" stroke="#d5aa63" stroke-opacity=".35" stroke-width="4"/><g fill="#3a3028" stroke="#d8b678" stroke-opacity=".35"><rect x="105" y="250" width="175" height="210"/><rect x="315" y="240" width="175" height="220"/><rect x="525" y="255" width="170" height="205"/></g><g stroke="#d6b36e" stroke-opacity=".3"><path d="M105 510h590M105 570h590M105 630h590"/></g><circle cx="155" cy="805" r="80" fill="#171719" stroke="#c79c58" stroke-opacity=".35"/><text x="45" y="90" fill="#f2d39a" font-family="sans-serif" font-size="26" font-weight="700">АРХИВ ПРОФЕССОРА</text><text x="45" y="122" fill="#c9a970" font-family="sans-serif" font-size="14">Дневники • фотографии • секретные протоколы</text></svg>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 1000">
+<defs>
+  <linearGradient id="bg" x2="0" y2="1">
+    <stop stop-color="#2a2440"/>
+    <stop offset="1" stop-color="#0e0c18"/>
+  </linearGradient>
+</defs>
+<rect width="800" height="1000" fill="url(#bg)"/>
+<g fill="#3d3558" stroke="#9b8aff" stroke-opacity=".3">
+  <rect x="60" y="180" width="680" height="18" rx="3"/>
+  <rect x="60" y="320" width="680" height="18" rx="3"/>
+  <rect x="60" y="460" width="680" height="18" rx="3"/>
+  <rect x="60" y="600" width="680" height="18" rx="3"/>
+</g>
+<g fill="#7c6cff" opacity=".35">
+  <rect x="100" y="200" width="40" height="100" rx="4"/>
+  <rect x="160" y="210" width="36" height="90" rx="4"/>
+  <rect x="220" y="195" width="44" height="105" rx="4"/>
+  <rect x="400" y="340" width="40" height="100" rx="4"/>
+  <rect x="460" y="350" width="38" height="90" rx="4"/>
+  <rect x="520" y="335" width="42" height="105" rx="4"/>
+</g>
+<text x="50" y="80" fill="#d4ccff" font-family="system-ui,sans-serif" font-size="22" font-weight="700" opacity=".5">ARCHIVE</text>
+</svg>
