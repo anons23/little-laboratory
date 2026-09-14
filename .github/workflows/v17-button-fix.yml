@@ -1,0 +1,59 @@
+name: v1.7 button binding fix
+on:
+  push:
+    branches: [v1.7]
+permissions:
+  contents: write
+jobs:
+  fix:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: v1.7
+          fetch-depth: 1
+      - name: Replace implicit element globals with explicit DOM lookups
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          p=Path('index.html')
+          h=p.read_text(encoding='utf-8')
+          replacements={
+            'moneyRes.onclick=': "document.getElementById('moneyRes').onclick=",
+            'researchRes.onclick=': "document.getElementById('researchRes').onclick=",
+            'energyRes.onclick=': "document.getElementById('energyRes').onclick=",
+            'samplesRes.onclick=': "document.getElementById('samplesRes').onclick=",
+            'continueBtn.onclick=': "document.getElementById('continueBtn').onclick=",
+            'storyArchiveBackBtn.onclick=': "document.getElementById('storyArchiveBackBtn').onclick=",
+          }
+          changed=False
+          for old,new in replacements.items():
+              if old in h:
+                  h=h.replace(old,new)
+                  changed=True
+          if not changed:
+              raise SystemExit('No implicit element globals found; inspect current binding code')
+          p.write_text(h,encoding='utf-8')
+          PY
+          python3 tests/test_game_integrity.py
+          python3 tests/test_gameplay_economy.py
+          python3 - <<'PY'
+          from pathlib import Path
+          import re
+          h=Path('index.html').read_text(encoding='utf-8')
+          scripts=re.findall(r'<script(?:\s[^>]*)?>(.*?)</script>',h,re.S)
+          assert scripts
+          Path('/tmp/game.js').write_text(scripts[-1],encoding='utf-8')
+          PY
+          node --check /tmp/game.js
+      - name: Commit fix and remove temporary workflow
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add index.html
+          git commit -m 'fix: bind v1.7 controls without implicit globals'
+          git rm .github/workflows/v17-button-fix.yml
+          git rm .github/workflows/v17-browser-smoke.yml || true
+          git commit -m 'chore: remove temporary browser diagnostics'
+          git push origin HEAD:v1.7
