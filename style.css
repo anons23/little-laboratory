@@ -125,3 +125,7 @@ button:disabled{opacity:.4;cursor:not-allowed}
 .echo-art:before,.echo-art:after,.creature-tank:before,.creature-tank:after{display:none!important;content:none!important}
 .echo-caption{text-align:center;color:#8aabc0;font-size:12px;margin-top:4px;background:rgba(4,14,20,.45);padding:8px;border-radius:10px}
 @media(max-width:420px){.nav-item{font-size:16px}.nav-item span{font-size:7px}.echo-art,.creature-tank{height:300px}.ad-bonus-grid{grid-template-columns:1fr}}
+
+/* V1_7_CLICK_SAFETY */
+button,.nav-item,.resource,[role="button"]{pointer-events:auto!important;touch-action:manipulation!important}
+.screen:before{pointer-events:none!important}
