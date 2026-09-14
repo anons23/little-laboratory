@@ -51,7 +51,7 @@ jobs:
           checks=[
             ('doctype','<!doctype html>' in html.lower()),
             ('viewport','name="viewport"' in html.lower()),
-            ('style.css',bool(re.search(r'href="style\\.css(?:\\?[^" ]*)?"',html))),
+            ('style.css',bool(re.search(r'href="style\.css(?:\?[^" ]*)?"',html))),
             ('Yandex Games SDK','https://sdk.games.s3.yandex.net/sdk.js' in html),
             ('YaGames.init','YaGames.init()' in html),
           ]
