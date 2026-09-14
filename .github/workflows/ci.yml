@@ -1,4 +1,5 @@
 # final-build-verification
+# v1.7 hardening verification
 name: Little Laboratory CI
 
 on:
