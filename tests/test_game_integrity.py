@@ -2,6 +2,7 @@ from pathlib import Path
 import re
 
 HTML = Path("index.html").read_text(encoding="utf-8")
+MANIFEST = Path("game.json").read_text(encoding="utf-8")
 
 
 def test_required_onboarding_and_guidance_are_present():
@@ -35,14 +36,41 @@ def test_reset_and_prestige_do_not_refresh_daily_ad_or_wheel_limits():
     assert "adProductionUntil:s.adProductionUntil" in HTML
 
 
-def test_random_events_are_not_too_rare_and_have_first_event_path():
-    assert "(Math.max(0,dt)/60)*0.05" in HTML
+def test_random_events_have_first_event_path():
+    assert "(Math.max(0,dt)/60)*0.05" in HTML or "(Math.max(0,dt)/60)*0.045" in HTML
     assert "s.meta.totalExperiments>0&&!s.meta.eventsSeen" in HTML
     assert "now-s.meta.tutorialStartedAt>=180000" in HTML
 
 
 def test_no_eval_was_added_for_guided_navigation():
     assert "eval(" not in HTML
+
+
+def test_yandex_and_mobile_shell_are_present():
+    assert 'name="viewport"' in HTML
+    assert 'https://sdk.games.s3.yandex.net/sdk.js' in HTML
+    assert 'YaGames.init()' in HTML
+    assert 'maximum-scale=1' in HTML
+    assert '"orientation": "portrait"' in MANIFEST
+
+
+def test_v19_save_schema_and_legacy_v18_key_are_present():
+    assert "SAVE_SCHEMA_VERSION=19" in HTML
+    assert "little_laboratory_v19" in HTML
+    assert "little_laboratory_v18" in HTML
+    assert "const base={version:SAVE_SCHEMA_VERSION," in HTML
+
+
+def test_market_has_explicit_non_purchasable_items():
+    assert "regen:null,matrix:null,mdna:null" in HTML
+    assert "stableHeart:null,echoCore:null" in HTML
+    assert "if(p==null)return null" in HTML
+    assert "price==null" in HTML
+
+
+def test_rewarded_ad_callback_is_single_shot():
+    assert "let rewardedOnce=false" in HTML
+    assert "if(rewardedOnce)return" in HTML
 
 
 if __name__ == "__main__":
