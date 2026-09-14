@@ -81,6 +81,25 @@ jobs:
       - name: Run game integrity tests
         run: python3 tests/test_game_integrity.py
 
+      - name: Check runtime economy invariants
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          html=Path('index.html').read_text(encoding='utf-8')
+          required=[
+            'function nowMs(){return typeof ysdk?.serverTime===\'function\'?ysdk.serverTime():Date.now()}',
+            'function today(){const d=new Date(nowMs())',
+            'Math.min(10800,Math.max(0,(nowMs()-num(s.lastOffline))/1000))',
+            'window.__productionCacheKey===sig',
+            'pr.dataset.rateKey!==key',
+            'list.dataset.rateKey!==key',
+            'await player.setData(s,false)',
+          ]
+          missing=[x for x in required if x not in html]
+          if missing: raise SystemExit('Runtime invariants missing: '+repr(missing))
+          print('Runtime economy invariants OK')
+          PY
+
       - name: Check for accidental local-file URLs
         run: |
           if grep -RniE 'file://|javascript:' index.html style.css game.json README.md tests; then
