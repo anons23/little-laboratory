@@ -1,0 +1,58 @@
+name: v1.7 lifecycle fix
+on:
+  push:
+    branches: [v1.7]
+permissions:
+  contents: write
+jobs:
+  fix:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: v1.7
+          fetch-depth: 1
+      - name: Remove unsafe out-of-scope lifecycle hook
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          p=Path('index.html'); h=p.read_text(encoding='utf-8')
+          start=h.find('/* v1.7 HARDENING lifecycle */')
+          if start>=0:
+              end=h.find('</script>',start)
+              if end<0: raise SystemExit('script end not found')
+              h=h[:start]+h[end:]
+          p.write_text(h,encoding='utf-8')
+          PY
+          python3 tests/test_game_integrity.py
+          python3 tests/test_gameplay_economy.py
+          python3 - <<'PY'
+          from pathlib import Path
+          import re
+          h=Path('index.html').read_text(encoding='utf-8')
+          assert 'v1.7 HARDENING lifecycle' not in h
+          scripts=re.findall(r'<script(?:\s[^>]*)?>(.*?)</script>',h,re.S)
+          Path('/tmp/game.js').write_text(scripts[-1],encoding='utf-8')
+          PY
+          node --check /tmp/game.js
+      - name: Remove lifecycle test that depended on deleted hook
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          p=Path('tests/test_gameplay_economy.py'); h=p.read_text(encoding='utf-8')
+          old="""def test_lifecycle_reentry_path_exists():\n    assert \"document.addEventListener('visibilitychange'\" in HTML and 'settleWheelPending()' in HTML and 'lastTick=nowMs()' in HTML\n"""
+          new="""def test_yandex_pause_resume_lifecycle_exists():\n    assert 'game_api_pause' in HTML and 'game_api_resume' in HTML\n    assert 'GameplayAPI?.stop?.()' in HTML and 'GameplayAPI?.start?.()' in HTML\n"""
+          if old not in h: raise SystemExit('expected lifecycle test not found')
+          p.write_text(h.replace(old,new),encoding='utf-8')
+          PY
+          python3 tests/test_gameplay_economy.py
+      - name: Commit and remove temporary workflow
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add index.html tests/test_gameplay_economy.py
+          git commit -m 'fix: keep lifecycle handling in game scope'
+          git rm .github/workflows/v17-fix-lifecycle.yml
+          git commit -m 'chore: remove temporary lifecycle workflow'
+          git push origin HEAD:v1.7
