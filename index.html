@@ -726,11 +726,4 @@ for(const k of ['money','research','energy','capacity','labLevel','prestige']){c
           function renderNow(){ensureStateShape();settleWheelPending();try{renderTop()}catch(e){}try{renderProduction()}catch(e){}try{const _gt=document.getElementById('goalText');if(_gt)_gt.textContent=s.labLevel<2?'Проведи эксперименты.':s.echoDone?'Престиж.':'Развивай лабораторию'}catch(e){}try{renderOnboarding()}catch(e){}try{renderGuidedGoal()}catch(e){}try{renderAdBonuses()}catch(e){}try{renderWarehouse()}catch(e){}try{renderExperiment()}catch(e){}try{renderMachines()}catch(e){}try{renderRecipes()}catch(e){}try{renderMarket()}catch(e){}try{renderEcho()}catch(e){}try{renderTech()}catch(e){}try{renderFortune()}catch(e){}try{renderCollection()}catch(e){}try{renderStoryArchive()}catch(e){}try{renderOrders()}catch(e){}try{renderEvent()}catch(e){}try{renderTasks()}catch(e){}}
 try{bindLabTabs();bindMarketTabs()}catch(e){console.error(e)}
 setInterval(tick,1000);(async()=>{try{if(window.YaGames){ysdk=await YaGames.init();try{player=await ysdk.getPlayer({scopes:false})}catch{}}}catch{}await load();try{ysdk?.features?.LoadingAPI?.ready?.();ysdk?.features?.GameplayAPI?.start?.();ysdk?.on?.('game_api_pause',()=>{gamePaused=true;save(false,false)});ysdk?.on?.('game_api_resume',()=>{gamePaused=false;lastTick=nowMs();render()})}catch(e){console.error(e)}try{bindLabTabs();bindMarketTabs();render()}catch(e){console.error(e)}})();})();
-          /* v1.7 HARDENING lifecycle */
-          let __llLastVisible=nowMs();
-          document.addEventListener('visibilitychange',()=>{
-            if(document.visibilityState==='hidden'){__llLastVisible=nowMs();return}
-            const gap=Math.max(0,(nowMs()-__llLastVisible)/1000);
-            if(gap>1){lastTick=nowMs();if(typeof settleWheelPending==='function')settleWheelPending();render()}
-          },{passive:true});
           </script></body></html>

@@ -14,8 +14,9 @@ def test_reward_reset_persistence_markers_exist():
 def test_prestige_and_reset_preserve_meta():
     assert 'meta.resets=(meta.resets||0)+1' in HTML and 'meta.bestLevel=Math.max(meta.bestLevel||1,s.labLevel||1)' in HTML and 'await save(false,true)' in HTML
 def test_no_unsafe_dynamic_code(): assert 'eval(' not in HTML and 'new Function(' not in HTML
-def test_lifecycle_reentry_path_exists():
-    assert "document.addEventListener('visibilitychange'" in HTML and 'settleWheelPending()' in HTML and 'lastTick=nowMs()' in HTML
+def test_yandex_pause_resume_lifecycle_exists():
+    assert 'game_api_pause' in HTML and 'game_api_resume' in HTML
+    assert 'GameplayAPI?.stop?.()' in HTML and 'GameplayAPI?.start?.()' in HTML
 if __name__=='__main__':
     tests=[v for n,v in globals().items() if n.startswith('test_')]
     for t in tests:t()
