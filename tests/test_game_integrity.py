@@ -78,3 +78,19 @@ if __name__ == "__main__":
     for test in tests:
         test()
     print(f"Game integrity tests OK: {len(tests)}")
+
+def test_runtime_stability_and_yandex_gameplay_markup():
+    assert "function nowMs()" in HTML
+    assert "ysdk?.serverTime" in HTML
+    assert "if(s.event&&s.event.id&&num(s.event.expires)>now)return" in HTML
+    assert "s.tasks.produce=(s.tasks.produce|0)+got" in HTML
+    assert "await player.setData(s,false)" in HTML
+    assert "GameplayAPI?.stop?.()" in HTML
+    assert "LoadingAPI?.ready?.()" in HTML
+    assert "game_api_pause" in HTML and "game_api_resume" in HTML
+    assert "overscroll-behavior:none" in HTML
+
+
+def test_reset_recreates_task_and_ad_state():
+    assert "tech:clone(base.tech),tasks:clone(base.tasks),adCounts:clone(base.adCounts)" in HTML
+
