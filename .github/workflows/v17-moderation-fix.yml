@@ -1,0 +1,86 @@
+name: v1.7 moderation hardening
+on:
+  push:
+    branches: [v1.7]
+  workflow_dispatch:
+permissions:
+  contents: write
+jobs:
+  patch:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout v1.7
+        uses: actions/checkout@v6
+        with:
+          ref: v1.7
+      - name: Patch moderation requirements
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          from pathlib import Path
+          import re
+
+          index=Path('index.html')
+          html=index.read_text(encoding='utf-8')
+
+          old="ysdk=await YaGames.init();"
+          new=("ysdk=await YaGames.init();"
+               "try{const detectedLang=String(ysdk?.environment?.i18n?.lang||'ru').toLowerCase();"
+               "const supportedLangs=['ru'];"
+               "window.__llLang=detectedLang;"
+               "document.documentElement.lang=supportedLangs.includes(detectedLang)?detectedLang:'ru';"
+               "}catch{window.__llLang='ru';document.documentElement.lang='ru';}")
+          if old not in html:
+              raise SystemExit('SDK init marker not found')
+          if 'environment?.i18n?.lang' not in html:
+              html=html.replace(old,new,1)
+
+          html=html.replace('Колесо фортуны','Колесо наград')
+          html=html.replace("const gifCandidates=['assets/opyty.gif','assets/'+encodeURIComponent('Опыты.gif'),'assets/Opyty.gif','assets/experiments.gif'];",
+                            "const gifCandidates=['assets/experiments.gif','assets/opyty.gif','assets/Opyty.gif'];")
+
+          index.write_text(html,encoding='utf-8')
+
+          css=Path('style.css')
+          style=css.read_text(encoding='utf-8')
+          marker='/* V1_7_MODERATION_LAYOUT */'
+          if marker not in style:
+              style += '''\n\n/* V1_7_MODERATION_LAYOUT */\nhtml,body{width:100%;height:100%;min-height:100%;overflow:hidden!important;overscroll-behavior:none!important}\n#game{height:100vh;min-height:100vh;overflow:hidden!important}\nmain{height:calc(100vh - 110px);min-height:0;overflow:hidden!important}\n.screen{height:100%;min-height:0;overflow-x:hidden;overflow-y:auto;overscroll-behavior:contain;scrollbar-width:none;-ms-overflow-style:none}\n.screen::-webkit-scrollbar{width:0;height:0}\n.screen#home{overflow:hidden!important}\n'''
+          css.write_text(style,encoding='utf-8')
+          PY
+
+          python3 - <<'PY'
+          from pathlib import Path
+          import re
+          html=Path('index.html').read_text(encoding='utf-8')
+          if 'environment?.i18n?.lang' not in html:
+              raise SystemExit('I18N SDK detection missing')
+          if 'renderEchoProgress()' in html:
+              raise SystemExit('Removed duplicate Echo progress renderer still referenced')
+          if 'assets/Опыты.gif' in html or 'assets/Эхо.gif' in html:
+              raise SystemExit('Old Cyrillic GIF path still referenced')
+          if 'Колесо фортуны' in html:
+              raise SystemExit('Old fortune-wheel label still present')
+          style=Path('style.css').read_text(encoding='utf-8')
+          for marker in ('html,body{width:100%;height:100%;min-height:100%;overflow:hidden!important',
+                         'main{height:calc(100vh - 110px)',
+                         '.screen{height:100%;min-height:0;overflow-x:hidden;overflow-y:auto'):
+              if marker not in style:
+                  raise SystemExit('Moderation layout CSS missing: '+marker)
+          print('Moderation patch checks OK')
+          PY
+
+          if git diff --quiet; then
+            echo 'No changes needed'
+            exit 0
+          fi
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add index.html style.css
+          git commit -m 'fix(v1.7): satisfy Yandex moderation requirements'
+          git push origin HEAD:v1.7
+
+          rm -f .github/workflows/v17-moderation-fix.yml
+          git add -u .github/workflows/v17-moderation-fix.yml
+          git commit -m 'chore(v1.7): remove temporary moderation workflow'
+          git push origin HEAD:v1.7
