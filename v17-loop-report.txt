@@ -1,0 +1,28 @@
+
+=== tick ===
+function tick(){const now=nowMs(),dt=Math.min(5,Math.max(0,(now-lastTick)/1000));lastTick=now;if(document.visibilityState==='visible'&&!gamePaused){try{maybeEvent(dt)}catch(e){}prodAccumulator=(typeof prodAccumulator==='number'?prodAccumulator:0)+dt;const p=production();for(const k in p)if(p[k]>0){const got=addResource(k,p[k]*dt);if(got>0&&s.tasks)s.tasks.produce=(s.tasks.produce|0)+got}if(s.energy<150)s.energy=Math.min(150,s.energy+dt*.08);try{updateLevel()}catch(e){}try{renderTop()}catch(e){}try{renderProduction()}catch(e){}if(now%10000<1000){try{renderAdBonuses()}catch(e){}}}if(now-saveTimer>15000){saveTimer=now;save(false,false)}}
+
+=== render ===
+function render(){ensureStateShape();settleWheelPending();try{renderTop()}catch(e){}try{renderProduction()}catch(e){}try{const _gt=document.getElementById('goalText');if(_gt)_gt.textContent=s.labLevel<2?'Проведи эксперименты.':s.echoDone?'Престиж.':'Развивай лабораторию'}catch(e){}try{renderOnboarding()}catch(e){}try{renderGuidedGoal()}catch(e){}try{renderAdBonuses()}catch(e){}try{renderWarehouse()}catch(e){}try{renderExperiment()}catch(e){}try{renderMachines()}catch(e){}try{renderRecipes()}catch(e){}try{renderMarket()}catch(e){}try{renderEcho()}catch(e){}try{renderTech()}catch(e){}try{renderFortune()}catch(e){}try{renderCollection()}catch(e){}try{renderStoryArchive()}catch(e){}try{renderOrders()}catch(e){}try{renderEvent()}catch(e){}try{renderTasks()}catch(e){}}
+
+=== load ===
+function load(){let local=null;for(const key of [KEY,...OLD_KEYS])try{const x=JSON.parse(localStorage.getItem(key)||'null');if(x&&(!local||num(x.lastSave)>num(local.lastSave)))local=x}catch{}if(player)try{const cloud=await player.getData();if(cloud&&typeof cloud==='object'&&(!local||num(cloud.lastSave)>num(local.lastSave)))local=cloud}catch{}s=normalize(local);const away=Math.min(10800,Math.max(0,(nowMs()-num(s.lastOffline))/1000));const gained=applyElapsed(away);if(away>30&&gained>0)toast('⏱️ Оффлайн (до 3 ч): +'+Math.floor(gained)+' материалов');s.lastOffline=nowMs();updateLevel();render()}
+
+=== save ===
+function save(renderIt=true,cloud=true){s.lastSave=nowMs();s.lastOffline=s.lastSave;localStorage.setItem(KEY,JSON.stringify(s));if(cloud&&player)try{await player.setData(s,false)}catch{}if(renderIt)render()}
+
+=== production ===
+function production(){const r={sample:0,blood:0,dna:0,neural:0,bone:0,reagent:0,crystal:0,virus:0};for(const m of machines)r[m[5]]+=(s.machines[m[0]]|0)*m[4];const bonus=(1+(s.prestige|0)*.05)*(nowMs()<num(s.adProductionUntil)?2:1);for(const k in r){r[k]*=bonus*0.5;if(k==='sample')r[k]*=0.4}return r}
+
+=== produce NOT FOUND===
+
+=== offline NOT FOUND===
+
+=== doDestroyLab ===
+function doDestroyLab(){const meta=clone(s.meta||base.meta);meta.resets=(meta.resets||0)+1;meta.bestLevel=Math.max(meta.bestLevel||1,s.labLevel||1);const daily={money:120,research:60,energy:100,capacity:30,labLevel:1,prestige:0,exp:{},hinted:[],discovered:['sample','blood','reagent'],installed:{},echoDone:false,machines:{incubator:1,culture:0,analyzer:0,tissue:0,regenerator:0,synth:0,crystal:0,virusLab:0},tech:clone(base.tech),tasks:clone(base.tasks),adCounts:clone(base.adCounts),adWarehouseUntil:0,adDiscountUntil:0,adProductionUntil:0,orders:{day:'',active:[],claimed:{}},event:{id:'',expires:0},storySeen:{}};Object.assign(s,base,daily);s.meta=meta;s.lastSave=nowMs();s.lastOffline=s.lastSave;selected=[];const modal=document.getElementById('resetConfirmModal');if(modal)modal.classList.add('hidden');await save();toast('💥 Лаборатория уничтожена. Протокол «Чистый лист» выполнен.');try{render()}catch(e){}try{setScreen('home')}catch(e){}}
+
+=== prestige ===
+function prestige(){if(s.labLevel<5)return toast('Для престижа нужен 5 уровень');if(!confirm('Престиж сбросит материалы, деньги, аппараты и технологии. Ранг останется и даст +5% к производству. Продолжить?'))return;const p=(s.prestige|0)+1;const meta=clone(s.meta||base.meta);meta.resets=(meta.resets||0)+1;meta.bestLevel=Math.max(meta.bestLevel||1,s.labLevel||1);const daily={fortuneDay:s.fortuneDay,fortuneFree:s.fortuneFree,fortuneAds:s.fortuneAds,adDay:s.adDay,adCounts:clone(s.adCounts||base.adCounts),adWarehouseUntil:s.adWarehouseUntil,adDiscountUntil:s.adDiscountUntil,adProductionUntil:s.adProductionUntil,introSeen:s.introSeen,storySeen:clone(s.storySeen||{}),meta:meta};s=clone(base);s.prestige=p;Object.assign(s,daily);s.lastSave=nowMs();s.lastOffline=s.lastSave;localStorage.setItem(KEY,JSON.stringify(s));selected=[];await save(false,true);render();toast('⭐ Престиж '+p+' — производство +'+(p*5)+'%')}
+
+=== addResource ===
+function addResource(k,a){if(a<=0)return 0;const cur=Math.max(0,num(s[k]));if(canStore(k,a)){s[k]=cur+a;return a}return 0}
