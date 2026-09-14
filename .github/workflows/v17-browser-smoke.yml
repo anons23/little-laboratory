@@ -24,8 +24,11 @@ jobs:
       - name: Start local server
         run: python3 -m http.server 4173 --bind 127.0.0.1 >/tmp/server.log 2>&1 &
       - name: Browser smoke
+        id: smoke
+        continue-on-error: true
         run: |
           cat > /tmp/smoke.cjs <<'JS'
+          const fs=require('fs');
           const { chromium } = require('playwright');
           (async()=>{
             const browser=await chromium.launch({headless:true});
@@ -36,13 +39,22 @@ jobs:
             page.on('dialog',d=>d.dismiss());
             await page.goto('http://127.0.0.1:4173/index.html?smoke=1',{waitUntil:'networkidle'});
             await page.waitForTimeout(1200);
-            const state=await page.evaluate(()=>({title:document.title,buttons:[...document.querySelectorAll('button')].map(b=>({id:b.id,text:(b.innerText||'').trim().slice(0,80),disabled:b.disabled,displayed:!!(b.offsetWidth||b.offsetHeight||b.getClientRects().length)}))}));
-            console.log('BUTTONS '+JSON.stringify(state.buttons));
-            console.log('PAGE '+JSON.stringify(state));
-            console.log('ERROR_COUNT '+errors.length);
-            for(const e of errors) console.log(e);
+            const state=await page.evaluate(()=>({title:document.title,buttons:[...document.querySelectorAll('button')].map(b=>({id:b.id,text:(b.innerText||'').trim().slice(0,80),disabled:b.disabled,displayed:!!(b.offsetWidth||b.offsetHeight||b.getClientRects().length),onclick:!!b.onclick}))}));
+            const report='BUTTONS '+JSON.stringify(state.buttons,null,2)+'\nPAGE '+JSON.stringify(state,null,2)+'\nERROR_COUNT '+errors.length+'\n'+errors.join('\n\n');
+            fs.writeFileSync('/tmp/browser-report.txt',report);
+            console.log(report);
             if(errors.length) process.exit(1);
             await browser.close();
-          })().catch(e=>{console.error(e.stack||e);process.exit(1)});
+          })().catch(e=>{fs.writeFileSync('/tmp/browser-report.txt',String(e.stack||e));console.error(e.stack||e);process.exit(1)});
           JS
           node /tmp/smoke.cjs
+      - name: Upload browser report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: v17-browser-report
+          path: /tmp/browser-report.txt
+          if-no-files-found: warn
+      - name: Fail on browser errors
+        if: steps.smoke.outcome == 'failure'
+        run: exit 1
