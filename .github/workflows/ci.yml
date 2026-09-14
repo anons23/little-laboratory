@@ -81,6 +81,9 @@ jobs:
       - name: Run game integrity tests
         run: python3 tests/test_game_integrity.py
 
+      - name: Run gameplay economy tests
+        run: python3 tests/test_gameplay_economy.py
+
       - name: Check runtime economy invariants
         run: |
           python3 - <<'PY'
@@ -94,6 +97,9 @@ jobs:
             'pr.dataset.rateKey!==key',
             'list.dataset.rateKey!==key',
             'await player.setData(s,false)',
+            'function renderNow(){',
+            'window.__llRenderQueued',
+            'function renderEchoProgress(){',
           ]
           missing=[x for x in required if x not in html]
           if missing: raise SystemExit('Runtime invariants missing: '+repr(missing))
