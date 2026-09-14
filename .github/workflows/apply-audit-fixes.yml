@@ -1,0 +1,66 @@
+name: Apply audit fixes to v1.7
+
+on:
+  push:
+    branches: [v1.7]
+
+permissions:
+  contents: write
+
+jobs:
+  patch:
+    if: ${{ !contains(github.event.head_commit.message, '[audit-patched]') }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Apply deterministic audit patch
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          p=Path('index.html')
+          s=p.read_text(encoding='utf-8')
+          orig=s
+          s=s.replace("const KEY='little_laboratory_v18',OLD_KEYS=['little_laboratory_v17'", "const SAVE_SCHEMA_VERSION=19;const KEY='little_laboratory_v19',OLD_KEYS=['little_laboratory_v18','little_laboratory_v17'", 1)
+          s=s.replace("const base={version:18,", "const base={version:SAVE_SCHEMA_VERSION,", 1)
+          s=s.replace("regen:1000000,matrix:1000000,mdna:1000000,heart:1800,adaptedHeart:3000,stableHeart:1000000,echoCore:10000", "regen:null,matrix:null,mdna:null,heart:1800,adaptedHeart:3000,stableHeart:null,echoCore:null", 1)
+          s=s.replace("function buyPrice(k){let p=buyPrices[k];if(p==null)return 0;", "function buyPrice(k){let p=buyPrices[k];if(p==null)return null;", 1)
+          s=s.replace("const price=buyPrice(k);const cost=price*q;if((Number(s.money)||0)<cost)", "const price=buyPrice(k);if(price==null)return toast('Этот материал нельзя купить на рынке');const cost=price*q;if((Number(s.money)||0)<cost)", 1)
+          s=s.replace("return p>0&&p<500000", "return p!=null&&p>0&&p<500000", 1)
+          s=s.replace("async function rewarded(fn){if(adBusy)return toast('Реклама уже запущена');if(!ysdk?.adv?.showRewardedVideo)return toast('Реклама сейчас недоступна');adBusy=true;try{await ysdk.adv.showRewardedVideo({callbacks:{onRewarded:fn}})}catch{toast('Реклама сейчас недоступна')}finally{adBusy=false}}", "async function rewarded(fn){if(adBusy)return toast('Реклама уже запущена');if(!ysdk?.adv?.showRewardedVideo)return toast('Реклама сейчас недоступна');adBusy=true;let rewardedOnce=false;const reward=()=>{if(rewardedOnce)return;rewardedOnce=true;try{fn()}catch(err){console.error(err);toast('Ошибка выдачи награды')}};try{await ysdk.adv.showRewardedVideo({callbacks:{onRewarded:reward}})}catch{toast('Реклама сейчас недоступна')}finally{adBusy=false}}", 1)
+          s=s.replace('</style></head>', 'button{-webkit-tap-highlight-color:transparent;touch-action:manipulation}\n@media(max-width:700px){.nav-item{min-width:0}.nav-item span{font-size:8px}.lobby-hud{grid-template-columns:minmax(72px,.9fr) minmax(0,1.2fr) minmax(56px,.8fr);gap:6px}.lobby-left{max-width:none}.lobby-right{gap:6px}.lobby-side-btn{width:52px;min-height:52px}.global-resources .resource{min-width:0}.lab-top-tabs{grid-template-columns:repeat(2,1fr)!important}.lab-top-tabs button{min-height:58px!important}.echo-mid{grid-template-columns:auto minmax(0,1fr) auto}.echo-slot{width:58px;height:58px}.experiment-ui{padding:16px 10px 22px}.reaction-slot-btn{min-width:82px;min-height:82px}}\n@media(min-width:701px){.nav-item{font-size:20px}.nav-item span{font-size:9px}}\n</style></head>', 1)
+          if s == orig:
+              raise SystemExit('No patch applied; aborting')
+          p.write_text(s, encoding='utf-8')
+          PY
+
+      - name: Run integrity tests
+        run: python3 tests/test_game_integrity.py
+
+      - name: Check JavaScript syntax
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          import re
+          html=Path('index.html').read_text(encoding='utf-8')
+          scripts=re.findall(r'<script(?:\s[^>]*)?>(.*?)</script>',html,re.I|re.S)
+          inline=[x for x in scripts if x.strip()]
+          if not inline: raise SystemExit('No inline JavaScript found')
+          Path('/tmp/game-inline.js').write_text('\n\n'.join(inline),encoding='utf-8')
+          PY
+          node --check /tmp/game-inline.js
+
+      - name: Commit patched game
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add index.html
+          git diff --cached --quiet && exit 0
+          git commit -m 'Apply audit fixes [audit-patched]'
+          git push
+
+      - name: Remove one-shot workflow
+        run: |
+          git rm .github/workflows/apply-audit-fixes.yml
+          git commit -m 'Remove one-shot audit workflow [audit-patched]'
+          git push
