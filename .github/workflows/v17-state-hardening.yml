@@ -2,6 +2,8 @@ name: v1.7 state hardening v2
 on:
   push:
     branches: [v1.7]
+permissions:
+  contents: write
 jobs:
   harden:
     runs-on: ubuntu-latest
