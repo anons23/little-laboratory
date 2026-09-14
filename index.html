@@ -727,17 +727,8 @@ for(const k of ['money','research','energy','capacity','labLevel','prestige']){c
           function render(){
             if(window.__llRenderQueued){window.__llRenderAgain=true;return}
             window.__llRenderQueued=true;
-            const flush=()=>{window.__llRenderQueued=false;renderNow();renderEchoProgress();if(window.__llRenderAgain){window.__llRenderAgain=false;render()}};
+            const flush=()=>{window.__llRenderQueued=false;renderNow();if(window.__llRenderAgain){window.__llRenderAgain=false;render()}};
             if(typeof requestAnimationFrame==='function')requestAnimationFrame(flush);else setTimeout(flush,50);
-          }
-          
-          function renderEchoProgress(){
-            const host=document.querySelector('#creature'); if(!host||!s)return;
-            let box=host.querySelector('.echo-progress');
-            if(!box){box=document.createElement('section');box.className='echo-progress';host.insertBefore(box,host.firstElementChild||null)}
-            const bag=s.res||s.resources||s; const has=k=>Number(bag?.[k]||0)>0;
-            const items=[['stableHeart','Стабильное сердце'],['matrix','Матрица'],['mdna','М-ДНК'],['regen','Регенерация'],['bioenergy','Биоэнергия']];
-            box.innerHTML='<h3>Прогресс проекта «Эхо»</h3><div class="echo-progress-list">'+items.map(([k,label])=>`<div class="echo-progress-item ${has(k)?'done':'missing'}"><span>${has(k)?'✓':'○'} ${label}</span><span class="echo-progress-state">${has(k)?'ГОТОВО':'НУЖНО'}</span></div>`).join('')+'</div>';
           }
           function renderNow(){ensureStateShape();settleWheelPending();try{renderTop()}catch(e){}try{renderProduction()}catch(e){}try{const _gt=document.getElementById('goalText');if(_gt)_gt.textContent=s.labLevel<2?'Проведи эксперименты.':s.echoDone?'Престиж.':'Развивай лабораторию'}catch(e){}try{renderOnboarding()}catch(e){}try{renderGuidedGoal()}catch(e){}try{renderAdBonuses()}catch(e){}try{renderWarehouse()}catch(e){}try{renderExperiment()}catch(e){}try{renderMachines()}catch(e){}try{renderRecipes()}catch(e){}try{renderMarket()}catch(e){}try{renderEcho()}catch(e){}try{renderTech()}catch(e){}try{renderFortune()}catch(e){}try{renderCollection()}catch(e){}try{renderStoryArchive()}catch(e){}try{renderOrders()}catch(e){}try{renderEvent()}catch(e){}try{renderTasks()}catch(e){}}
 try{bindLabTabs();bindMarketTabs()}catch(e){console.error(e)}
