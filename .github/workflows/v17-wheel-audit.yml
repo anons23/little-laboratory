@@ -1,0 +1,35 @@
+name: v1.7 wheel audit
+on:
+  push:
+    branches: [v1.7]
+permissions:
+  contents: write
+jobs:
+  audit:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Inspect wheel flow
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          s=Path('index.html').read_text()
+          needles=['function startWheelSpin','startWheelSpin(','fortuneAds','fortuneFree','fortuneDay','wheel-spin','rewarded']
+          for n in needles:
+              print('\n###',n)
+              pos=0
+              count=0
+              while True:
+                  pos=s.find(n,pos)
+                  if pos<0 or count>=5: break
+                  print(s[max(0,pos-700):min(len(s),pos+1800)])
+                  pos+=len(n); count+=1
+          PY
+      - name: Remove audit workflow
+        run: |
+          rm -f .github/workflows/v17-wheel-audit.yml
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add .github/workflows/v17-wheel-audit.yml
+          git commit -m 'chore: remove temporary wheel audit workflow' || true
+          git push
