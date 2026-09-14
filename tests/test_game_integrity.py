@@ -76,7 +76,7 @@ def test_rewarded_ad_callback_is_single_shot():
 def test_runtime_stability_and_yandex_gameplay_markup():
     assert "function nowMs()" in HTML
     assert "ysdk?.serverTime" in HTML
-    assert "if(s.event&&s.event.id&&num(s.event.expires)>now)return" in HTML
+    assert "if(s.event&&s.event.id)return" in HTML
     assert "s.tasks.produce=(s.tasks.produce|0)+got" in HTML
     assert "await player.setData(s,false)" in HTML
     assert "GameplayAPI?.stop?.()" in HTML
@@ -94,6 +94,14 @@ def test_prestige_preserves_history_and_flushes_cloud_save():
     assert "meta.resets=(meta.resets||0)+1" in HTML
     assert "meta.bestLevel=Math.max(meta.bestLevel||1,s.labLevel||1)" in HTML
     assert "await save(false,true)" in HTML
+
+
+def test_offline_and_render_performance_invariants():
+    assert "Math.min(10800,Math.max(0,(nowMs()-num(s.lastOffline))/1000))" in HTML
+    assert "new Date(nowMs())" in HTML
+    assert "pr.dataset.rateKey!==key" in HTML
+    assert "list.dataset.rateKey!==key" in HTML
+    assert "window.__productionCacheKey===sig" in HTML
 
 
 def test_critical_reset_preserves_daily_limits_and_rebuilds_nested_state():
