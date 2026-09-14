@@ -30,6 +30,21 @@ jobs:
           test -f .github/workflows/ci.yml
           test -d assets
 
+      - name: Validate archive file names
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          bad=[]
+          for p in Path('.').rglob('*'):
+              if '.git' in p.parts:
+                  continue
+              if any(ord(ch)>127 or ch.isspace() for ch in p.name):
+                  bad.append(str(p))
+          if bad:
+              raise SystemExit('Invalid archive path names (Cyrillic/whitespace): '+repr(bad))
+          print('Archive file names OK')
+          PY
+
       - name: Validate game manifest
         run: |
           python3 - <<'PY'
@@ -55,6 +70,9 @@ jobs:
             ('style.css',bool(re.search(r'href=["\']style\.css(?:\?[^"\']*)?["\']',html,re.I))),
             ('Yandex Games SDK','https://sdk.games.s3.yandex.net/sdk.js' in html),
             ('YaGames.init','YaGames.init()' in html),
+            ('Yandex I18N','environment?.i18n?.lang' in html),
+            ('no old Cyrillic GIF refs','assets/Опыты.gif' not in html and 'assets/Эхо.gif' not in html),
+            ('no old fortune-wheel label','Колесо фортуны' not in html),
           ]
           failed=[name for name,ok in checks if not ok]
           if failed: raise SystemExit('HTML checks failed: '+', '.join(failed))
@@ -62,7 +80,7 @@ jobs:
           allowed='https://sdk.games.s3.yandex.net/sdk.js'
           unexpected=[u for u in external if u!=allowed]
           if unexpected: raise SystemExit('Unexpected external JavaScript source: '+', '.join(unexpected))
-          print('HTML and Yandex SDK checks OK')
+          print('HTML, Yandex SDK and I18N checks OK')
           PY
 
       - name: Check JavaScript syntax
@@ -100,11 +118,30 @@ jobs:
             'await player.setData(s,false)',
             'function renderNow(){',
             'window.__llRenderQueued',
-            'function renderEchoProgress(){',
+            'environment?.i18n?.lang',
           ]
           missing=[x for x in required if x not in html]
           if missing: raise SystemExit('Runtime invariants missing: '+repr(missing))
+          if 'renderEchoProgress()' in html: raise SystemExit('Removed Echo progress renderer is still referenced')
           print('Runtime economy invariants OK')
+          PY
+
+      - name: Check moderation layout guards
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          html=Path('index.html').read_text(encoding='utf-8')
+          css=Path('style.css').read_text(encoding='utf-8')
+          required=[
+            'html,body{width:100%;height:100%;min-height:100%;overflow:hidden!important',
+            '#game{height:100vh;min-height:100vh;overflow:hidden!important}',
+            'main{height:calc(100vh - 110px);min-height:0;overflow:hidden!important}',
+            '.screen{height:100%;min-height:0;overflow-x:hidden;overflow-y:auto',
+          ]
+          missing=[x for x in required if x not in css]
+          if missing: raise SystemExit('Moderation layout guards missing: '+repr(missing))
+          if 'overscroll-behavior:none' not in css: raise SystemExit('Swipe-to-refresh guard missing')
+          print('Moderation layout guards OK')
           PY
 
       - name: Check for accidental local-file URLs
@@ -123,6 +160,13 @@ jobs:
           cp assets/* dist/little-laboratory/assets
           (cd dist && zip -qr little-laboratory-yandex-games.zip little-laboratory)
           test -s dist/little-laboratory-yandex-games.zip
+          python3 - <<'PY'
+          from pathlib import Path
+          import os
+          total=sum(p.stat().st_size for p in Path('dist/little-laboratory').rglob('*') if p.is_file())
+          if total>100*1024*1024: raise SystemExit(f'Archive exceeds 100 MiB: {total}')
+          print(f'Archive uncompressed size: {total} bytes')
+          PY
 
       - name: Upload game archive
         uses: actions/upload-artifact@v4
