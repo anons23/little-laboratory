@@ -6,9 +6,9 @@ def test_offline_scenarios_are_capped():
 def test_daily_limits_use_server_time(): assert 'function today(){const d=new Date(nowMs())' in HTML
 def test_render_is_frame_coalesced():
     assert 'function renderNow(){' in HTML and 'window.__llRenderQueued' in HTML and 'requestAnimationFrame(flush)' in HTML
-def test_echo_checklist_exists():
-    assert 'function renderEchoProgress(){' in HTML
-    for key in ('stableHeart','matrix','mdna','regen','bioenergy'): assert f"['{key}'" in HTML
+def test_echo_checklist_removed():
+    assert 'function renderEchoProgress(){' not in HTML
+    assert 'renderEchoProgress()' not in HTML
 def test_reward_reset_persistence_markers_exist():
     assert 'adCounts:clone(s.adCounts||base.adCounts)' in HTML and 'fortuneFree:s.fortuneFree' in HTML and 'fortuneAds:s.fortuneAds' in HTML
 def test_prestige_and_reset_preserve_meta():
