@@ -2,9 +2,8 @@ name: v1.7 loop inspection
 on:
   push:
     branches: [v1.7]
-  workflow_dispatch:
 permissions:
-  contents: read
+  contents: write
 jobs:
   inspect:
     runs-on: ubuntu-latest
@@ -12,16 +11,19 @@ jobs:
       - uses: actions/checkout@v6
         with:
           ref: v1.7
-      - name: Inspect loop and economy functions
+      - name: Inspect and publish report
+        env:
+          GH_TOKEN: ${{ github.token }}
         run: |
           python3 - <<'PY'
           from pathlib import Path
           s=Path('index.html').read_text(encoding='utf-8')
+          out=[]
           names=['tick','render','load','save','production','produce','offline','doDestroyLab','prestige','addResource']
           for name in names:
             p=s.find('function '+name+'(')
             if p<0:
-              print('\n===',name,'NOT FOUND===')
+              out.append('\n=== '+name+' NOT FOUND===')
               continue
             i=p; depth=0; quote=None; esc=False
             while i<len(s):
@@ -37,9 +39,12 @@ jobs:
                   depth-=1
                   if depth==0: break
               i+=1
-            print('\n===',name,'===')
-            print(s[p:i+1])
-          print('\n=== timer refs ===')
-          for needle in ['setInterval(','setTimeout(','lastTick','lastOffline','offline']:
-            print(needle, [s[max(0,x-100):x+250] for x in [i for i in range(len(s)) if s.startswith(needle,i)][:8]])
+            out.append('\n=== '+name+' ===\n'+s[p:i+1])
+          Path('/tmp/loop-report.txt').write_text('\n'.join(out),encoding='utf-8')
           PY
+          cp /tmp/loop-report.txt v17-loop-report.txt
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add v17-loop-report.txt
+          git commit -m 'chore: publish v1.7 loop inspection' || true
+          git push origin v1.7
