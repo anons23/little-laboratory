@@ -1,0 +1,51 @@
+name: v1.7 preview runtime fix
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [v1.7]
+
+permissions:
+  contents: write
+
+jobs:
+  fix:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Patch preview-safe Yandex runtime
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          p=Path('index.html')
+          s=p.read_text(encoding='utf-8')
+          marker='/* V1_7_PREVIEW_SDK_GUARD */'
+          if marker not in s:
+            tag='<script src="https://sdk.games.s3.yandex.net/sdk.js"></script>'
+            guard='''<script>/* V1_7_PREVIEW_SDK_GUARD */\n(function(){\n  const host=String(location.hostname||'').toLowerCase();\n  const isYandexHost=/(^|\\.)yandex\\.(ru|com|kz|by|co\\.il|com\\.tr)$/i.test(host);\n  function offlineSdk(){\n    const player={getData:async()=>({}),setData:async()=>{},getStats:async()=>({}),setStats:async()=>{},isAuthorized:()=>false};\n    return {serverTime:()=>Date.now(),getPlayer:async()=>player,getPayments:async()=>({getPurchases:async()=>[],purchase:async()=>({})}),getFlags:async()=>({}),adv:{showFullscreenAdv:async()=>{},showRewardedVideo:async()=>{}},auth:{openAuthDialog:async()=>{}},events:{notify:()=>{}},features:{LoadingAPI:{ready:()=>{}},GameplayAPI:{start:()=>{},stop:()=>{}}}};\n  }\n  const fallback=offlineSdk();\n  if(!window.YaGames){window.YaGames={init:async()=>fallback};return;}\n  if(typeof window.YaGames.init!=='function')return;\n  const realInit=window.YaGames.init.bind(window.YaGames);\n  window.YaGames.init=async function(){\n    if(isYandexHost)return realInit.apply(window.YaGames,arguments);\n    try{return await Promise.race([realInit.apply(window.YaGames,arguments),new Promise((_,reject)=>setTimeout(()=>reject(new Error('preview SDK timeout')),2500))]);}\n    catch(e){return fallback;}\n  };\n})();</script>'''
+            if tag not in s: raise SystemExit('Yandex SDK tag not found')
+            s=s.replace(tag,tag+guard,1)
+            s=s.replace('style.css?v=fix6','style.css?v=fix7',1)
+            p.write_text(s,encoding='utf-8')
+          PY
+      - name: Validate syntax and guard
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          import re
+          h=Path('index.html').read_text(encoding='utf-8')
+          assert 'V1_7_PREVIEW_SDK_GUARD' in h
+          assert 'preview SDK timeout' in h
+          assert 'style.css?v=fix7' in h
+          scripts=re.findall(r'<script(?:\s[^>]*)?>(.*?)</script>',h,re.I|re.S)
+          Path('/tmp/game-inline.js').write_text('\n\n'.join(x for x in scripts if x.strip()),encoding='utf-8')
+          PY
+          node --check /tmp/game-inline.js
+      - name: Commit fix
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add index.html
+          if git diff --cached --quiet; then exit 0; fi
+          git commit -m "fix: keep preview controls alive without Yandex runtime"
+          git push
