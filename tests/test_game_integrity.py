@@ -73,12 +73,6 @@ def test_rewarded_ad_callback_is_single_shot():
     assert "if(rewardedOnce)return" in HTML
 
 
-if __name__ == "__main__":
-    tests = [v for n, v in globals().items() if n.startswith("test_")]
-    for test in tests:
-        test()
-    print(f"Game integrity tests OK: {len(tests)}")
-
 def test_runtime_stability_and_yandex_gameplay_markup():
     assert "function nowMs()" in HTML
     assert "ysdk?.serverTime" in HTML
@@ -94,3 +88,22 @@ def test_runtime_stability_and_yandex_gameplay_markup():
 def test_reset_recreates_task_and_ad_state():
     assert "tech:clone(base.tech),tasks:clone(base.tasks),adCounts:clone(base.adCounts)" in HTML
 
+
+def test_prestige_preserves_history_and_flushes_cloud_save():
+    assert "const meta=clone(s.meta||base.meta)" in HTML
+    assert "meta.resets=(meta.resets||0)+1" in HTML
+    assert "meta.bestLevel=Math.max(meta.bestLevel||1,s.labLevel||1)" in HTML
+    assert "await save(false,true)" in HTML
+
+
+def test_critical_reset_preserves_daily_limits_and_rebuilds_nested_state():
+    assert "adCounts:clone(s.adCounts||base.adCounts)" in HTML
+    assert "tech:clone(base.tech),tasks:clone(base.tasks),adCounts:clone(base.adCounts)" in HTML
+    assert "selected=[];" in HTML
+
+
+if __name__ == "__main__":
+    tests = [v for n, v in globals().items() if n.startswith("test_")]
+    for test in tests:
+        test()
+    print(f"Game integrity tests OK: {len(tests)}")
