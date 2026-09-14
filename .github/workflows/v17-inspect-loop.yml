@@ -1,0 +1,43 @@
+name: v1.7 loop inspection
+on:
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  inspect:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          ref: v1.7
+      - name: Inspect loop and economy functions
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          s=Path('index.html').read_text(encoding='utf-8')
+          names=['tick','render','load','save','production','produce','offline','doDestroyLab','prestige','addResource']
+          for name in names:
+            p=s.find('function '+name+'(')
+            if p<0:
+              print('\n===',name,'NOT FOUND===')
+              continue
+            i=p; depth=0; quote=None; esc=False
+            while i<len(s):
+              c=s[i]
+              if quote:
+                if esc: esc=False
+                elif c=='\\': esc=True
+                elif c==quote: quote=None
+              else:
+                if c in "'\"`": quote=c
+                elif c=='{': depth+=1
+                elif c=='}':
+                  depth-=1
+                  if depth==0: break
+              i+=1
+            print('\n===',name,'===')
+            print(s[p:i+1])
+          print('\n=== timer refs ===')
+          for needle in ['setInterval(','setTimeout(','lastTick','lastOffline','offline']:
+            print(needle, [s[max(0,x-100):x+250] for x in [i for i in range(len(s)) if s.startswith(needle,i)][:8]])
+          PY
