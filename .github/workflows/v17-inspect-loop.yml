@@ -1,5 +1,7 @@
 name: v1.7 loop inspection
 on:
+  push:
+    branches: [v1.7]
   workflow_dispatch:
 permissions:
   contents: read
