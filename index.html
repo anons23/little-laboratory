@@ -747,4 +747,22 @@ setInterval(tick,1000);(async()=>{try{if(window.YaGames){ysdk=await YaGames.init
     }catch(err){console.error('click delegation',err)}
   },true);
 })();</script>
-</body></html>
+<script>/* V1_7_ECHO_AUTOTRIGGER */
+(function(){
+  const KEY="little_laboratory_v19";
+  const req=["regen","matrix","mdna","bioenergy","heart","adaptedHeart","stableHeart"];
+  let busy=false;
+  function trigger(){
+    if(busy)return;
+    try{
+      const st=JSON.parse(localStorage.getItem(KEY)||"null");
+      if(!st||!(st.tech&&st.tech.echo)||st.echoDone||!req.every(k=>(st[k]|0)>=1))return;
+      const fin=document.getElementById("echoFinishSlot");
+      if(!fin)return;
+      busy=true; fin.click(); setTimeout(()=>busy=false,3000);
+    }catch(e){}
+  }
+  setInterval(trigger,500);
+  document.addEventListener("visibilitychange",trigger);
+})();
+</script></body></html>
